@@ -1,35 +1,37 @@
 package main
 
 import (
-	"bufio"
-	"fmt"
-	"galaxies/internal/core"
-	"galaxies/internal/core/enums"
-	"galaxies/internal/gen"
-	"math/rand"
-	"os"
-	"strings"
-	"time"
+    "bufio"
+    "fmt"
+    "galaxies/internal/core/entity"   
+    "galaxies/internal/core/function" 
+    "galaxies/internal/core/enums"
+    "galaxies/internal/core/gen"      
+    "math/rand"
+	"math"
+    "os"
+    "strings"
+    "time"
 )
 
 // Global state to track where the player is currently docked
-var currentSystem *core.System
-var lastDiscoveredSystem *core.System // Track the last 'gen' result to allow jumping
+var player *entity.Player
+var lastDiscoveredSystem *entity.System
 
 func main() {
-	// 1. Init
-	rand.Seed(time.Now().UnixNano())
-	reader := bufio.NewReader(os.Stdin)
+    rand.Seed(time.Now().UnixNano())
+    reader := bufio.NewReader(os.Stdin)
 
-	// 2. Establish "Home Base" (Coordinates 0, 0)
-	currentSystem = gen.GenerateSystem(gen.GenerateSystemConfig{
-		Name:      "Home Station Alpha", // Force a name
-		X:         0,
-		Y:         0,
-		Political: enums.PoliticalStatus(-1),
-		Economic:  enums.EconomicStatus(-1),
-		Social:    enums.SocialStatus(-1),
-	})
+    // 1. Create Home System
+    startSys := gen.GenerateSystem(gen.GenerateSystemConfig{
+        Name: "Home Station Alpha", X: 0, Y: 0,
+        Political: enums.PoliticalStatus(-1),
+        Economic:  enums.EconomicStatus(-1),
+        Social:    enums.SocialStatus(-1),
+    })
+
+    // 2. Initialize Player
+    player = entity.NewPlayer("Commander Shep", startSys)
 
 	fmt.Println("================================================")
 	fmt.Println("   GALACTIC SURVEY DATABASE :: CORE WORLDS SCAN")
@@ -85,6 +87,22 @@ func main() {
 			// Reset target
 			lastDiscoveredSystem = nil
 
+		case "ship":
+			// Generate a random ship
+			ship := gen.GenerateRandomShip()
+			
+			fmt.Println("\n>> VESSEL IDENTIFIED...")
+			fmt.Printf("MODEL:  %s\n", ship.ModelName)
+			fmt.Println("------------------------------------------------")
+			fmt.Printf("STATS:  Hull: %.0f | Shield: %.0f | Speed: %.1f LY/h\n", 
+				ship.Stats.MaxHull, ship.Stats.MaxShield, ship.Stats.Speed)
+			fmt.Printf("CAPS:   Cargo: %d | Pax: %d | Fuel: %.0f\n", 
+				ship.Stats.MaxCargo, ship.Stats.MaxPassengers, ship.Stats.MaxFuel)
+			fmt.Printf("SLOTS:  High: %d | Mid: %d | Low: %d\n", 
+				ship.Stats.HighSlots, ship.Stats.MidSlots, ship.Stats.LowSlots)
+			fmt.Printf("GRID:   Power: %d MW | CPU: %d Tf\n", 
+				ship.Stats.PowerGridOutput, ship.Stats.CPUOutput)
+
 		case "exit", "quit":
 			fmt.Println("Shutting down survey link...")
 			return
@@ -98,9 +116,9 @@ func main() {
 }
 
 // Helper to calculate and print navigation physics
-func PrintNavigationData(target *core.System) {
-	// Use the DefaultShip we defined in core/navigation.go
-	nav := core.CalculateJump(currentSystem.X, currentSystem.Y, target.X, target.Y, core.DefaultShip)
+func PrintNavigationData(target *entity.System) {
+	// Use the DefaultShip we defined in entity/navigation.go
+	nav := function.CalculateJump(currentSystem.X, currentSystem.Y, target.X, target.Y, function.DefaultShip)
 
 	fmt.Println(">> NAVIGATION COMPUTER CALCULATION")
 	fmt.Printf("   Origin:       %s [%d, %d]\n", currentSystem.Name, currentSystem.X, currentSystem.Y)
@@ -142,7 +160,7 @@ func generateBatch(count int) {
 }
 
 // Reuse your existing PrintSystemDossier function here...
-func PrintSystemDossier(sys *core.System) {
+func PrintSystemDossier(sys *entity.System) {
 	fmt.Printf("SYSTEM: %-20s COORDS: [%d, %d]\n", sys.Name, sys.X, sys.Y)
 	fmt.Println("------------------------------------------------")
 	fmt.Printf("POL: %-22s ECO: %-22s SOC: %s\n", sys.Political, sys.Economic, sys.Social)

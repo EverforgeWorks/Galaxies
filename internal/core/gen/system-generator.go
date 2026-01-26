@@ -1,7 +1,7 @@
 package gen
 
 import (
-	"galaxies/internal/core"
+	"galaxies/internal/core/entity"
 	"galaxies/internal/core/enums"
 	"math/rand"
 	"time"
@@ -19,7 +19,7 @@ type GenerateSystemConfig struct {
 	Social    enums.SocialStatus    // Pass -1 for Random
 }
 
-func GenerateSystem(config GenerateSystemConfig) *core.System {
+func GenerateSystem(config GenerateSystemConfig) *entity.System {
 	rand.Seed(time.Now().UnixNano())
 
 	// 1. Handle Randomization
@@ -46,7 +46,7 @@ func GenerateSystem(config GenerateSystemConfig) *core.System {
 	}
 
 	// 3. Create Base Stats
-	stats := core.NewDefaultSystemStats()
+	stats := entity.NewDefaultSystemStats()
 
 	// 4. Apply The Modifiers (The "Stacking" Logic)
 	// Order matters slightly: We do Political -> Economic -> Social
@@ -59,7 +59,7 @@ func GenerateSystem(config GenerateSystemConfig) *core.System {
 	FinalizeStats(&stats)
 
 	// 6. Create the System Struct
-	sys := &core.System{
+	sys := &entity.System{
 		ID:        uuid.New(),
 		Name:      name,
 		X:         config.X,
@@ -77,7 +77,7 @@ func GenerateSystem(config GenerateSystemConfig) *core.System {
 }
 
 // FinalizeStats acts as the safety net for the stacking logic
-func FinalizeStats(s *core.SystemStats) {
+func FinalizeStats(s *entity.SystemStats) {
 	// Logic: Tax can never be negative, and rarely above 40% unless specified
 	if s.TaxRate < 0 {
 		s.TaxRate = 0

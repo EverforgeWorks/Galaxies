@@ -1,12 +1,12 @@
 package gen
 
 import (
-	"galaxies/internal/core"
+	"galaxies/internal/core/entity"
 	"galaxies/internal/core/enums"
 )
 
 // --- POLITICAL MODIFIERS ---
-func ApplyPoliticalMods(s *core.SystemStats, p enums.PoliticalStatus) {
+func ApplyPoliticalMods(s *entity.SystemStats, p enums.PoliticalStatus) {
 	switch p {
 	case enums.PolImperialCore:
 		s.TaxRate += 0.20
@@ -132,7 +132,7 @@ func ApplyPoliticalMods(s *core.SystemStats, p enums.PoliticalStatus) {
 }
 
 // --- ECONOMIC MODIFIERS ---
-func ApplyEconomicMods(s *core.SystemStats, e enums.EconomicStatus) {
+func ApplyEconomicMods(s *entity.SystemStats, e enums.EconomicStatus) {
 	switch e {
 	case enums.EcoPostScarcity:
 		s.MarketSellMult *= 0.4
@@ -240,7 +240,7 @@ func ApplyEconomicMods(s *core.SystemStats, e enums.EconomicStatus) {
 }
 
 // --- SOCIAL MODIFIERS ---
-func ApplySocialMods(s *core.SystemStats, soc enums.SocialStatus) {
+func ApplySocialMods(s *entity.SystemStats, soc enums.SocialStatus) {
 	switch soc {
 	case enums.SocCosmopolitan:
 		s.PassengerDensity *= 2.0

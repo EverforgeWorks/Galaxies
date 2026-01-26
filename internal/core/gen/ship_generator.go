@@ -1,14 +1,14 @@
 package gen
 
 import (
-	"fmt"
-	"galaxies/internal/core"
-	"galaxies/internal/core/enums"
-	"github.com/google/uuid"
+    "fmt"
+    "galaxies/internal/core/entity" // NEW PATH
+    "galaxies/internal/core/enums"
+    "github.com/google/uuid"
 	"math/rand"
 )
 
-func GenerateShip(qual enums.ShipQualifier, origin enums.ShipOrigin, chassis enums.ShipChassis) *core.Ship {
+func GenerateShip(qual enums.ShipQualifier, origin enums.ShipOrigin, chassis enums.ShipChassis) *entity.Ship {
 	// 1. Start with Chassis
 	stats := GetBaseChassisStats(chassis)
 
@@ -22,7 +22,7 @@ func GenerateShip(qual enums.ShipQualifier, origin enums.ShipOrigin, chassis enu
 	// e.g. "Hardspace Imperial Interceptor"
 	fullName := fmt.Sprintf("%s %s %s", qual, origin, chassis)
 
-	return &core.Ship{
+	return &entity.Ship{
 		ID:          uuid.New(),
 		Name:        "Unnamed Vessel",
 		ModelName:   fullName,
@@ -34,7 +34,7 @@ func GenerateShip(qual enums.ShipQualifier, origin enums.ShipOrigin, chassis enu
 }
 
 // GenerateRandomShip picks random enums for everything
-func GenerateRandomShip() *core.Ship {
+func GenerateRandomShip() *entity.Ship {
 	q := enums.ShipQualifier(rand.Intn(8))
 	o := enums.ShipOrigin(rand.Intn(8))
 	c := enums.ShipChassis(rand.Intn(8))

@@ -1,14 +1,14 @@
 package gen
 
 import (
-	"galaxies/internal/core"
+	"galaxies/internal/core/entity"
 	"galaxies/internal/core/enums"
 )
 
 // 1. BASE STATS (The Chassis)
-func GetBaseChassisStats(c enums.ShipChassis) core.ShipStats {
+func GetBaseChassisStats(c enums.ShipChassis) entity.ShipStats {
 	// Default Baseline
-	s := core.ShipStats{
+	s := entity.ShipStats{
 		MaxHull: 100, MaxShield: 100, MaxFuel: 100,
 		Speed: 1.0, FuelEfficiency: 10.0,
 		MaxCargo: 10, MaxPassengers: 0, MaxCrew: 2,
@@ -54,7 +54,7 @@ func GetBaseChassisStats(c enums.ShipChassis) core.ShipStats {
 }
 
 // 2. ORIGIN MODIFIERS (The Profession)
-func ApplyOriginMods(s *core.ShipStats, o enums.ShipOrigin) {
+func ApplyOriginMods(s *entity.ShipStats, o enums.ShipOrigin) {
 	switch o {
 	case enums.OriginOuterRim:
 		s.FuelEfficiency *= 0.8 // 20% Better
@@ -71,7 +71,7 @@ func ApplyOriginMods(s *core.ShipStats, o enums.ShipOrigin) {
 		s.StealthRating += 0.3
 		s.MaxShield += 50
 		s.MaxHull -= 30
-		s.HeatHandling += 0.1
+		s.ThermalHandling += 0.1
 
 	case enums.OriginIndustrial:
 		s.MaxCargo += 50
@@ -92,7 +92,7 @@ func ApplyOriginMods(s *core.ShipStats, o enums.ShipOrigin) {
 }
 
 // 3. QUALIFIER MODIFIERS (The Adjective)
-func ApplyQualifierMods(s *core.ShipStats, q enums.ShipQualifier) {
+func ApplyQualifierMods(s *entity.ShipStats, q enums.ShipQualifier) {
 	switch q {
 	case enums.QualHardspace:
 		s.MaxHull *= 1.5

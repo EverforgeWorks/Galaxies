@@ -1,7 +1,7 @@
 package gen
 
 import (
-	"galaxies/internal/core"
+	"galaxies/internal/core/entity"
 	"math"
 	"math/rand"
 	"time"
@@ -30,7 +30,7 @@ const (
 
 // PopulateSystem takes the calculated Stats (Densities) and rolls the dice
 // to determine the actual Counts for this generation cycle.
-func PopulateSystem(s *core.System) {
+func PopulateSystem(s *entity.System) {
 	rand.Seed(time.Now().UnixNano())
 
 	// Helper to calculate count based on Range * Multiplier
