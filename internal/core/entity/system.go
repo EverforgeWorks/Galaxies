@@ -2,7 +2,7 @@ package entity
 
 import (
 	"github.com/google/uuid"
-	"galaxies/internal/core/domain" // Assuming this path exists
+	"galaxies/internal/core/domain"
 )
 
 type System struct {

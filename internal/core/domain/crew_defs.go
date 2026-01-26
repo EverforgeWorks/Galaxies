@@ -19,7 +19,7 @@ func (r CrewRole) String() string {
 	}[r]
 }
 
-// --- CREW TYPES (Origin/Species) ---
+// --- CREW TYPES ---
 type CrewType int
 
 const (

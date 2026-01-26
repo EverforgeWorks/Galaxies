@@ -5,7 +5,7 @@ import (
 	"math/rand"
 	"time"
 	"galaxies/internal/core/domain"
-	"galaxies/internal/core/entity" // Replace with actual path
+	"galaxies/internal/core/entity"
 	"github.com/google/uuid"
 )
 
