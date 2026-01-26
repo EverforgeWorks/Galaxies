@@ -35,7 +35,6 @@ type Ship struct {
 	CurrentFuel   float64 `json:"current_fuel"`
 
 	// --- INVENTORY ---
-	Modules    []Module    `json:"modules"`
 	Cargo      []Item      `json:"cargo"`
 	Passengers []Passenger `json:"passengers"`
 	Crew       []Crew      `json:"crew"`
@@ -168,99 +167,32 @@ func (s *Ship) Refuel(amount float64) {
 	}
 }
 
-// InstallModule attempts to attach a module to the ship.
-func (s *Ship) InstallModule(mod Module) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	// 1. Check Slot Availability
-	usedHigh, usedMid, usedLow := 0, 0, 0
-	for _, m := range s.Modules {
-		switch m.SlotType {
-		case SlotHigh:
-			usedHigh++
-		case SlotMid:
-			usedMid++
-		case SlotLow:
-			usedLow++
-		}
-	}
-
-	switch mod.SlotType {
-	case SlotHigh:
-		if usedHigh >= s.Stats.HighSlots {
-			return ErrNoSlotsAvailable
-		}
-	case SlotMid:
-		if usedMid >= s.Stats.MidSlots {
-			return ErrNoSlotsAvailable
-		}
-	case SlotLow:
-		if usedLow >= s.Stats.LowSlots {
-			return ErrNoSlotsAvailable
-		}
-	}
-
-	// 2. Check Power Grid Load
-	currentPowerLoad := 0
-	for _, m := range s.Modules {
-		currentPowerLoad += m.PowerCost
-	}
-
-	if currentPowerLoad+mod.PowerCost > s.Stats.MaxPowerGrid {
-		return fmt.Errorf("%w: available %d, need %d", ErrInsufficientPower, s.Stats.MaxPowerGrid-currentPowerLoad, mod.PowerCost)
-	}
-
-	// 3. Install
-	s.Modules = append(s.Modules, mod)
-	
-	// TODO: Here you would call s.recalculateStats() to apply the module's effects
-	return nil
-}
-
-// RemoveModule uninstalls a module by ID.
-func (s *Ship) RemoveModule(modID uuid.UUID) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	for i, m := range s.Modules {
-		if m.ID == modID {
-			// Delete from slice efficiently
-			s.Modules[i] = s.Modules[len(s.Modules)-1] // Copy last element to index i
-			s.Modules = s.Modules[:len(s.Modules)-1]   // Truncate slice
-			
-			// TODO: Call s.recalculateStats() here
-			return nil
-		}
-	}
-	return ErrModuleNotFound
-}
-
 // AddCargo attempts to add an item to the hold.
 func (s *Ship) AddCargo(newItem Item) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// Calculate current volume usage
-	currentVol := 0
+	// 1. Calculate current usage (Sum of all item quantities)
+	currentUsage := 0
 	for _, item := range s.Cargo {
-		currentVol += item.Volume * item.Quantity
+		currentUsage += item.Quantity
 	}
 
-	newVol := newItem.Volume * newItem.Quantity
-	if currentVol+newVol > s.Stats.CargoVolume {
+	// 2. Check Capacity
+	// Note: We are treating CargoVolume as "Total Units Capacity" now
+	if currentUsage + newItem.Quantity > s.Stats.CargoVolume {
 		return ErrCargoFull
 	}
 
-	// Check if we can stack with existing item
+	// 3. Stack or Append
 	for i, item := range s.Cargo {
-		if item.ID == newItem.ID { // Assuming ID matches "Type" for stacking, or use a TemplateID
+		// Use Name or ID to stack
+		if item.Name == newItem.Name { 
 			s.Cargo[i].Quantity += newItem.Quantity
 			return nil
 		}
 	}
 
-	// Otherwise append new stack
 	s.Cargo = append(s.Cargo, newItem)
 	return nil
 }
