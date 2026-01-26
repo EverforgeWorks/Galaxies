@@ -37,6 +37,18 @@ func GenerateCrewID() string {
 	return fmt.Sprintf("%s-%s-%s", l1, n1, l2)
 }
 
+// Add this to your existing names.go file
+
+// GeneratePassengerID creates a travel visa identifier.
+// Format: LLLL-NNNN-LL (e.g., TRVL-8592-XK)
+func GeneratePassengerID() string {
+	l1 := pick(letters, 4)
+	n1 := pick(numbers, 4)
+	l2 := pick(letters, 2)
+
+	return fmt.Sprintf("%s-%s-%s", l1, n1, l2)
+}
+
 // Helper to pick n random characters from a slice
 func pick(source []rune, n int) string {
 	result := make([]rune, n)
