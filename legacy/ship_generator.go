@@ -2,7 +2,7 @@ package gen
 
 import (
     "fmt"
-    "galaxies/internal/core/entity" // NEW PATH
+    "galaxies/internal/core/entity"
     "galaxies/internal/core/enums"
     "github.com/google/uuid"
 	"math/rand"

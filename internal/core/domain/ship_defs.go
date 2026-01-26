@@ -1,4 +1,4 @@
-package enums
+package domain
 
 // 1. CHASSIS (The Noun) - Defines the BASE stats and Slots
 type ShipChassis int

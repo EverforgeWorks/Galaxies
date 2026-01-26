@@ -2,140 +2,127 @@ package entity
 
 import (
 	"github.com/google/uuid"
-	"galaxies/internal/core/enums"
+	"galaxies/internal/core/domain" // Assuming this path exists
 )
 
 type System struct {
 	ID        uuid.UUID
 	Name      string
-	X         int
-	Y         int
-	Political enums.PoliticalStatus
-	Economic  enums.EconomicStatus
-	Social    enums.SocialStatus
-	Stats     SystemStats
+	
+	// Coordinates (Light Years or Grid Units)
+	X int
+	Y int
+
+	// The "DNA" of the system - determining how stats are generated
+	Political enums.PoliticalStatus // e.g., "Anarchy", "Democracy"
+	Economic  enums.EconomicStatus  // e.g., "Industrial", "Agricultural"
+	Social    enums.SocialStatus    // e.g., "Feudal", "Utopian"
+
+	// The computed gameplay modifiers
+	Stats SystemStats `json:"stats"`
 }
 
 type SystemStats struct {
-	// --- GLOBAL MARKET & ECONOMY ---
-	MarketBuyMult    float64 `json:"market_buy_mult"`
-	MarketSellMult   float64 `json:"market_sell_mult"`
-	FuelCostMult     float64 `json:"fuel_cost_mult"`
-	RepairCostMult   float64 `json:"repair_cost_mult"`
-	TaxRate          float64 `json:"tax_rate"`
-	DockingFee       int     `json:"docking_fee"`
+	// --- ECONOMY & FEES ---
+	// Multipliers applied to the Global Base Price of items.
+	// Buy = Station sells to player. Sell = Station buys from player.
+	MarketBuyMult  float64 `json:"market_buy_mult"`  
+	MarketSellMult float64 `json:"market_sell_mult"` 
+	
+	FuelCostMult   float64 `json:"fuel_cost_mult"`   // Multiplier on global fuel price
+	RepairCostMult float64 `json:"repair_cost_mult"` // Multiplier on hull repair/dock services
+	DockingFee     int     `json:"docking_fee"`      // Flat credit fee to land
+	TaxRate        float64 `json:"tax_rate"`         // % taken from market transactions
 
-	// --- ILLEGAL MARKET ---
+	// --- ILLEGAL ACTIVITY ---
+	// If BlackMarket exists, these modifiers apply to "Contraband" items.
 	BlackMarketBuyMult  float64 `json:"black_market_buy"`
 	BlackMarketSellMult float64 `json:"black_market_sell"`
-	ContrabandProfit    float64 `json:"contraband_profit"`
+	
+	// Risk: 0.0 to 1.0
+	PiracyChance     float64 `json:"piracy_chance"`     // Chance of interdiction upon entering
+	InspectionChance float64 `json:"inspection_chance"` // Chance of police scan upon docking
+	BribeCostMult    float64 `json:"bribe_cost_mult"`   // Multiplier for avoiding fines
 
-	// --- SHIPYARD & OUTFITTER ---
-	ShipCostMult float64 `json:"ship_cost_mult"`
-	ModCostMult  float64 `json:"mod_cost_mult"`
+	// --- OPPORTUNITIES (Missions & Shipyard) ---
+	MissionPayMult float64 `json:"mission_pay"` // "Rich" systems pay more
+	ShipCostMult   float64 `json:"ship_cost_mult"`
+	ModCostMult    float64 `json:"mod_cost_mult"`
 
-	// --- MISSIONS & BOUNTIES ---
-	MissionQuantityMult float64 `json:"mission_quantity"`
-	MissionPayMult      float64 `json:"mission_pay"`
-	BountyPayMult       float64 `json:"bounty_pay"`
-
-	// --- POPULATION MODIFIERS (The Potential) ---
-	// These replace the old integer "Quantity" fields
-	PassengerDensity float64 `json:"passenger_density"` // Base 1.0
+	// --- POPULATION GENERATORS ---
+	// "Density" is a multiplier for the number of people generated.
+	// "Wealth" is a multiplier for the fares/rewards they offer.
+	PassengerDensity float64 `json:"passenger_density"`
 	PassengerWealth  float64 `json:"passenger_wealth"`
-	VIPDensity       float64 `json:"vip_density"`       // Base 0.0 (Special)
+	
+	VIPDensity       float64 `json:"vip_density"`
 	VIPWealth        float64 `json:"vip_wealth"`
-	SlumsDensity     float64 `json:"slums_density"`     // Base 0.0
-	SlumsWealth      float64 `json:"slums_wealth"`
-	AndroidDensity   float64 `json:"android_density"`   // Base 0.0
-	AndroidCost      int     `json:"android_cost"`
-	AndroidSkill     int     `json:"android_skill"`
-	PrisonerDensity  float64 `json:"prisoner_density"`  // Base 0.0
-	PrisonerCost     int     `json:"prisoner_cost"`
-	PrisonerSkill    int     `json:"prisoner_skill"`
+	
+	SlumsDensity     float64 `json:"slums_density"` // Refugees, criminals, cheap labor
+	
+	// Crew Availability
+	CrewDensity      float64 `json:"crew_density"`     // How many recruits appear
+	CrewSkillBonus   int     `json:"crew_skill_bonus"` // e.g. +2 levels for "Military" systems
 
-	// --- LIVE POPULATION COUNTS (The Reality) ---
-	// These are calculated by the Populator
-	PassengerCount int `json:"passenger_count"`
-	VIPCount       int `json:"vip_count"`
-	SlumsCount     int `json:"slums_count"`
-	AndroidCount   int `json:"android_count"`
-	PrisonerCount  int `json:"prisoner_count"`
-
-	// --- CREW ---
-	CrewPoolDensity    float64 `json:"crew_pool_density"` // Replaces Size
-	CrewPoolCount      int     `json:"crew_pool_count"`   // Actual number
-	CrewSkillAvg       int     `json:"crew_skill_avg"`
-	CrewHiringCostMult float64 `json:"crew_hiring_cost_mult"`
-
-	// --- RISK & LAW ---
-	PiracyChance     float64 `json:"piracy_chance"`
-	InspectionChance float64 `json:"inspection_chance"`
-	BribeCostMult    float64 `json:"bribe_cost_mult"`
-	WantedPassChance float64 `json:"wanted_pass_chance"`
-
-	// --- BOOLEAN FLAGS ---
+	// --- FACILITIES (Capabilities) ---
 	HasShipyard       bool `json:"has_shipyard"`
 	HasOutfitter      bool `json:"has_outfitter"`
-	HasCantina        bool `json:"has_cantina"`
-	HasHospital       bool `json:"has_hospital"`
-	HasBlackMarket    bool `json:"has_black_market"`
 	HasRefueling      bool `json:"has_refueling"`
+	HasBlackMarket    bool `json:"has_black_market"`
 	HasMissionBoard   bool `json:"has_mission_board"`
-	HasAndroidFoundry bool `json:"has_android_foundry"`
-	HasPrison         bool `json:"has_prison"`
-	HasLuxuryHousing  bool `json:"has_luxury_housing"`
-	HasSlums          bool `json:"has_slums"`
+	HasCantina        bool `json:"has_cantina"`       // Recruits Crew
+	HasHospital       bool `json:"has_hospital"`      // Heals Character/Crew
+	HasPrison         bool `json:"has_prison"`        // Drops off Prisoner passengers
+	HasAndroidFoundry bool `json:"has_android_foundry"` // Sells Android Crew
 }
 
 func NewDefaultSystemStats() SystemStats {
 	return SystemStats{
-		// Global Economy
-		MarketBuyMult:  1.0,
-		MarketSellMult: 1.0,
-		FuelCostMult:   1.0,
-		RepairCostMult: 1.0,
-		TaxRate:        0.05,
-		DockingFee:     50,
+		// --- ECONOMY & FEES ---
+		MarketBuyMult:  1.1,  // Station sells items at 110% of global average (Markup)
+		MarketSellMult: 0.9,  // Station buys items at 90% of global average (Spread)
+		FuelCostMult:   1.0,  // Standard fuel prices
+		RepairCostMult: 1.0,  // Standard repair labor costs
+		DockingFee:     100,  // Standard parking ticket
+		TaxRate:        0.05, // 5% sales tax on legal transactions
 
-		// Population Defaults (Potential)
-		PassengerDensity: 1.0, // Normal Traffic
-		PassengerWealth:  1.0,
-		CrewPoolDensity:  1.0, // Normal Crew availability
-		CrewSkillAvg:     3,
-		CrewHiringCostMult: 1.0,
+		// --- ILLEGAL ACTIVITY ---
+		BlackMarketBuyMult:  1.5, // Buying contraband is expensive (Risk premium)
+		BlackMarketSellMult: 0.6, // Fences pay low (they take the risk)
+		PiracyChance:        0.05, // 5% chance of ambush when entering system
+		InspectionChance:    0.10, // 10% chance of police scan on docking
+		BribeCostMult:       1.0,  // Standard bribery rates
 
-		// Special Pops (Default to 0 density)
-		VIPDensity:      0.0,
-		VIPWealth:       5.0,
-		SlumsDensity:    0.0,
-		SlumsWealth:     0.2,
-		AndroidDensity:  0.0,
-		PrisonerDensity: 0.0,
-		PrisonerCost:    1000,
-		PrisonerSkill:   2,
+		// --- OPPORTUNITIES ---
+		MissionPayMult: 1.0,
+		ShipCostMult:   1.0,
+		ModCostMult:    1.0,
+
+		// --- POPULATION GENERATORS ---
+		PassengerDensity: 1.0, // Standard crowd size
+		PassengerWealth:  1.0, // Standard fares
 		
-		// Base Stats for Specials
-		AndroidCost:  5000,
-		AndroidSkill: 5,
+		// Specials default to 0.0 (Must be enabled by Generators)
+		VIPDensity:       0.0, 
+		VIPWealth:        5.0, // If they theoretically existed, they'd pay 5x
+		SlumsDensity:     0.0, 
 
-		// Risk
-		PiracyChance:     0.05,
-		InspectionChance: 0.10,
-		BribeCostMult:    1.0,
-		WantedPassChance: 0.02,
-		BlackMarketBuyMult: 0.8,
-		BlackMarketSellMult: 1.2,
-		ContrabandProfit: 1.5,
+		// --- CREW ---
+		CrewDensity:    1.0,
+		CrewSkillBonus: 1,   // Standard rookies
 
-		// Facilities
+		// --- FACILITIES (The Baseline Standard) ---
+		// Most settled systems have these basics:
 		HasRefueling:    true,
-		HasCantina:      true,
 		HasMissionBoard: true,
-		MissionQuantityMult: 1.0,
-		MissionPayMult:      1.0,
-		BountyPayMult:       1.0,
-		ShipCostMult:        1.0,
-		ModCostMult:         1.0,
+		HasCantina:      true,
+
+		// These are "Premium" facilities, false by default:
+		HasShipyard:       false,
+		HasOutfitter:      false,
+		HasBlackMarket:    false,
+		HasHospital:       false,
+		HasPrison:         false,
+		HasAndroidFoundry: false,
 	}
 }

@@ -1,4 +1,4 @@
-package gen
+package domain
 
 import (
 	"fmt"
@@ -11,13 +11,13 @@ var (
 	numbers = []rune("0123456789")
 )
 
-func GenerateName() string {
-	// Ensure seed is set
+func init() {
+	// Seed once on startup
 	rand.Seed(time.Now().UnixNano())
+}
 
-	// Format: LL-NNNN-L-NNNN
-	// Example: AB-1234-C-5678
-	
+func GenerateName() string {
+	// Format: LL-NNNN-L-NNNN (e.g., AB-1234-C-5678)
 	l1 := pick(letters, 2)
 	n1 := pick(numbers, 4)
 	l2 := pick(letters, 1)
@@ -26,7 +26,6 @@ func GenerateName() string {
 	return fmt.Sprintf("%s-%s-%s-%s", l1, n1, l2, n2)
 }
 
-// Helper to pick n random characters from a slice
 func pick(source []rune, n int) string {
 	result := make([]rune, n)
 	for i := range result {

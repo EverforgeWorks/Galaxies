@@ -1,4 +1,4 @@
-package enums
+package domain
 
 // --- POLITICAL STATUSES (0-19) ---
 type PoliticalStatus int
