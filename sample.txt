@@ -1,0 +1,99 @@
+================================================
+   GALACTIC SURVEY DATABASE :: CORE WORLDS SCAN
+================================================
+
+SYSTEM: HP-9879-F-1259       COORDS: [-6, -6]
+------------------------------------------------
+POL: Exile Colony           ECO: Black Market Hub       SOC: Cult Activity
+------------------------------------------------
+MARKET  >> Tax: 5% | Docking: 50cr | Buy: x1.00 | Sell: x1.00
+ILLEGAL >> [OPEN] Fence Buys: x1.30 | Smuggling Profit: x2.25
+RISK    >> Piracy: 5% | Inspection: 50% | Bribe Cost: x1.00
+POPL    >> Pax: 0 (Wealth x1.0) | Crew Pool: 5 (Skill 2)
+FACILS  >> [FUEL] [CANTINA] [MISSIONS] [PRISON] 
+
+SYSTEM: DD-4026-G-8648       COORDS: [-7, 4]
+------------------------------------------------
+POL: Theocratic Rule        ECO: Industrial Boom        SOC: Cosmopolitan Metropolis
+------------------------------------------------
+MARKET  >> Tax: 5% | Docking: 50cr | Buy: x1.10 | Sell: x1.00
+RISK    >> Piracy: 5% | Inspection: 10% | Bribe Cost: x1.00
+POPL    >> Pax: 200 (Wealth x0.8) | Crew Pool: 15 (Skill 5)
+FACILS  >> [FUEL] [SHIPYARD] [CANTINA] [MISSIONS] 
+
+SYSTEM: WL-2313-O-2232       COORDS: [-1, 1]
+------------------------------------------------
+POL: Pirate Haven           ECO: Free Port              SOC: Worker Rebellion
+------------------------------------------------
+MARKET  >> Tax: 0% | Docking: 0cr | Buy: x1.00 | Sell: x0.20
+ILLEGAL >> [OPEN] Fence Buys: x1.20 | Smuggling Profit: x1.50
+RISK    >> Piracy: 55% | Inspection: 0% | Bribe Cost: x1.00
+POPL    >> Pax: 100 (Wealth x1.0) | Crew Pool: 5 (Skill 3)
+FACILS  >> [FUEL] [CANTINA] [MISSIONS] 
+
+SYSTEM: SR-4840-R-8219       COORDS: [7, 8]
+------------------------------------------------
+POL: Isolationist           ECO: Free Port              SOC: Refugee Crisis
+------------------------------------------------
+MARKET  >> Tax: 0% | Docking: 0cr | Buy: x1.00 | Sell: x1.00
+RISK    >> Piracy: 5% | Inspection: 0% | Bribe Cost: x1.00
+POPL    >> Pax: 400 (Wealth x0.1) | Crew Pool: 5 (Skill 3)
+SPECIAL >> Slum Dwellers: 1000
+FACILS  >> [FUEL] [CANTINA] [MISSIONS] 
+
+SYSTEM: KU-7391-B-2328       COORDS: [-4, -7]
+------------------------------------------------
+POL: Contested War Zone     ECO: Hyper-Inflation        SOC: Cult Activity
+------------------------------------------------
+MARKET  >> Tax: 5% | Docking: 50cr | Buy: x5.00 | Sell: x5.00
+RISK    >> Piracy: 25% | Inspection: 10% | Bribe Cost: x1.00
+POPL    >> Pax: 100 (Wealth x1.0) | Crew Pool: 5 (Skill 2)
+FACILS  >> [FUEL] [CANTINA] [MISSIONS] 
+
+SYSTEM: WH-4325-V-3553       COORDS: [7, -6]
+------------------------------------------------
+POL: Demilitarized Zone     ECO: Trade Embargo          SOC: Cult Activity
+------------------------------------------------
+MARKET  >> Tax: 5% | Docking: 50cr | Buy: x1.00 | Sell: x3.00
+RISK    >> Piracy: 5% | Inspection: 60% | Bribe Cost: x1.00
+POPL    >> Pax: 100 (Wealth x1.0) | Crew Pool: 5 (Skill 2)
+FACILS  >> [FUEL] [CANTINA] [MISSIONS] 
+
+SYSTEM: FU-0906-V-9219       COORDS: [-1, 3]
+------------------------------------------------
+POL: Syndicate Territory    ECO: Black Market Hub       SOC: Cybernetic Ascension
+------------------------------------------------
+MARKET  >> Tax: 5% | Docking: 300cr | Buy: x1.00 | Sell: x1.00
+ILLEGAL >> [OPEN] Fence Buys: x1.30 | Smuggling Profit: x2.48
+RISK    >> Piracy: 5% | Inspection: 0% | Bribe Cost: x1.00
+POPL    >> Pax: 100 (Wealth x1.0) | Crew Pool: 0 (Skill 3)
+SPECIAL >> Androids: 20 (Cost: 0cr)
+FACILS  >> [FUEL] [CANTINA] [MISSIONS] [FOUNDRY] 
+
+SYSTEM: XB-3434-D-4257       COORDS: [-5, 4]
+------------------------------------------------
+POL: Imperial Core          ECO: Depleted World         SOC: Academy / University
+------------------------------------------------
+MARKET  >> Tax: 25% | Docking: 50cr | Buy: x1.00 | Sell: x1.50
+RISK    >> Piracy: 0% | Inspection: 90% | Bribe Cost: x1.00
+POPL    >> Pax: 150 (Wealth x1.0) | Crew Pool: 5 (Skill 9)
+FACILS  >> [FUEL] [SHIPYARD] [OUTFITTER] [CANTINA] [MISSIONS] 
+
+SYSTEM: HL-2375-B-3388       COORDS: [-1, 10]
+------------------------------------------------
+POL: Failed State           ECO: Famine / Starvation    SOC: Gladiatorial Culture
+------------------------------------------------
+MARKET  >> Tax: 5% | Docking: 50cr | Buy: x1.50 | Sell: x0.50
+RISK    >> Piracy: 45% | Inspection: 10% | Bribe Cost: x1.00
+POPL    >> Pax: 150 (Wealth x1.0) | Crew Pool: 5 (Skill 8)
+FACILS  >> [CANTINA] [HOSPITAL] [MISSIONS] 
+
+SYSTEM: TY-5854-D-0844       COORDS: [-2, 6]
+------------------------------------------------
+POL: Pirate Haven           ECO: Resource Rich          SOC: Worker Rebellion
+------------------------------------------------
+MARKET  >> Tax: 0% | Docking: 200cr | Buy: x1.00 | Sell: x0.14
+ILLEGAL >> [OPEN] Fence Buys: x1.20 | Smuggling Profit: x1.50
+RISK    >> Piracy: 55% | Inspection: 0% | Bribe Cost: x1.00
+POPL    >> Pax: 100 (Wealth x1.0) | Crew Pool: 5 (Skill 3)
+FACILS  >> [FUEL] [CANTINA] [MISSIONS] 
