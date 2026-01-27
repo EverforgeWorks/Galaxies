@@ -114,3 +114,25 @@ func (p *Player) SwitchShip(newShip *Ship) error {
 	p.Ship = newShip
 	return nil
 }
+
+// --- Concurrency Controls (Solution B) ---
+
+// Lock freezes the player state for writing (e.g., during saving).
+func (p *Player) Lock() {
+	p.mu.Lock()
+}
+
+// Unlock releases the write lock.
+func (p *Player) Unlock() {
+	p.mu.Unlock()
+}
+
+// RLock freezes the player state for reading.
+func (p *Player) RLock() {
+	p.mu.RLock()
+}
+
+// RUnlock releases the read lock.
+func (p *Player) RUnlock() {
+	p.mu.RUnlock()
+}

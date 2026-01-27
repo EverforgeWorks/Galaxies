@@ -223,3 +223,20 @@ func (s *Ship) AddCrew(c Crew) error {
 	return nil
 }
 
+// --- Concurrency Controls (Solution B) ---
+
+func (s *Ship) Lock() {
+	s.mu.Lock()
+}
+
+func (s *Ship) Unlock() {
+	s.mu.Unlock()
+}
+
+func (s *Ship) RLock() {
+	s.mu.RLock()
+}
+
+func (s *Ship) RUnlock() {
+	s.mu.RUnlock()
+}
