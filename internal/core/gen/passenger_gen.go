@@ -61,7 +61,6 @@ func GeneratePassenger(sourceSys *entity.System, targetSysID uuid.UUID, distance
 	// 3. Final Fare Calculation
 	// (Distance * Base * Wealth * Type) + Random Variance
 	calculatedFare := int(distance * baseRate * wealthMult * typeMult)
-	calculatedFare = int(applyVariance(float64(calculatedFare), 0.1)) // +/- 10%
 
 	// 4. Generate the ID string
 	idString := GeneratePassengerID()

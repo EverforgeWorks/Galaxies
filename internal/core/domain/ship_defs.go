@@ -4,14 +4,14 @@ package domain
 type ShipChassis int
 
 const (
-	ChassisInterceptor ShipChassis = 0 // Fast, Weapon Heavy, Tiny Cargo
-	ChassisHauler      ShipChassis = 1 // Slow, Massive Cargo, Weak Defenses
-	ChassisYacht       ShipChassis = 2 // Passenger focused, Fast, Weak Hull
-	ChassisCorvette    ShipChassis = 3 // Balanced Military, Good Hull
-	ChassisProspector  ShipChassis = 4 // Industrial, Mining Slots, Good Sensors
-	ChassisCourier     ShipChassis = 5 // Extreme Speed, Small Cargo, Paper Hull
-	ChassisBarge       ShipChassis = 6 // Massive Hull, No Speed, Industrial
-	ChassisGunship     ShipChassis = 7 // Flying Tank, Slow, Heavy Weapons
+	ChassisInterceptor ShipChassis = 0
+	ChassisHauler      ShipChassis = 1
+	ChassisYacht       ShipChassis = 2
+	ChassisCorvette    ShipChassis = 3
+	ChassisProspector  ShipChassis = 4
+	ChassisCourier     ShipChassis = 5
+	ChassisBarge       ShipChassis = 6
+	ChassisGunship     ShipChassis = 7
 )
 
 func (c ShipChassis) String() string {
@@ -22,14 +22,14 @@ func (c ShipChassis) String() string {
 type ShipOrigin int
 
 const (
-	OriginOuterRim   ShipOrigin = 0 // Rugged: +Fuel Eff, -Shields
-	OriginImperial   ShipOrigin = 1 // Military: +Armor, +Heat Handling, -Stealth
-	OriginVoid       ShipOrigin = 2 // Stealth: +Stealth, -Hull
-	OriginIndustrial ShipOrigin = 3 // Working: +Cargo, -Speed
-	OriginClerical   ShipOrigin = 4 // Peaceful: +Pass/Crew, -Weapons
-	OriginCorporate  ShipOrigin = 5 // Efficient: +CPU, +Power, -Hull (Cheap build)
-	OriginScientific ShipOrigin = 6 // Tech: +Sensors, +Shields, -Cargo
-	OriginSmuggler   ShipOrigin = 7 // Illegal: +Speed, +Stealth, -Armor
+	OriginOuterRim   ShipOrigin = 0
+	OriginImperial   ShipOrigin = 1
+	OriginVoid       ShipOrigin = 2
+	OriginIndustrial ShipOrigin = 3
+	OriginClerical   ShipOrigin = 4
+	OriginCorporate  ShipOrigin = 5
+	OriginScientific ShipOrigin = 6
+	OriginSmuggler   ShipOrigin = 7
 )
 
 func (o ShipOrigin) String() string {
@@ -40,16 +40,35 @@ func (o ShipOrigin) String() string {
 type ShipQualifier int
 
 const (
-	QualHardspace   ShipQualifier = 0 // Durable: ++Hull, --Speed
-	QualLuxury      ShipQualifier = 1 // Expensive: ++PassengerWealth, ++Cost
-	QualSurplus     ShipQualifier = 2 // Cheap: --Cost, --Reliability
-	QualPrototype   ShipQualifier = 3 // Experimental: ++Power/CPU, --Reliability
-	QualRetrofitted ShipQualifier = 4 // Modded: +Slots, -Hull
-	QualRusty       ShipQualifier = 5 // Bad: --Stats everywhere, Cheap
-	QualReinforced  ShipQualifier = 6 // Tanky: +Armor, -Agility
-	QualTuned       ShipQualifier = 7 // Fast: +Speed, +Evasion, -Hull
+	QualHardspace   ShipQualifier = 0
+	QualLuxury      ShipQualifier = 1
+	QualSurplus     ShipQualifier = 2
+	QualPrototype   ShipQualifier = 3
+	QualRetrofitted ShipQualifier = 4
+	QualRusty       ShipQualifier = 5
+	QualReinforced  ShipQualifier = 6
+	QualTuned       ShipQualifier = 7
 )
 
 func (q ShipQualifier) String() string {
 	return [...]string{"Hardspace", "Luxury", "Surplus", "Prototype", "Retrofitted", "Rusty", "Reinforced", "Tuned"}[q]
+}
+
+// --- STRUCT DEFINITIONS ---
+
+// ChassisSpec represents the base stats template for a ship hull.
+// Renamed from ShipChassis to avoid conflict with the Enum above.
+type ChassisSpec struct {
+	Name           string
+	BaseHull       float64
+	BaseShield     float64
+	BaseFuel       float64
+	FuelEfficiency float64
+	BaseCargo      int
+	BaseCabins     int
+	BaseBunks      int
+	SlotsHigh      int
+	SlotsMid       int
+	SlotsLow       int
+	BasePrice      int
 }

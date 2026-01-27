@@ -43,7 +43,6 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 
 	// =============================================================================
 	// SECTOR 1: RAW MATERIALS
-	// Produced by: Resource Rich, Frontier, Mining Colonies
 	// =============================================================================
 	domain.ItemHydrogenFuelCells: {
 		E(domain.EcoRefuelingDepot), E(domain.EcoIndustrialBoom), P(domain.PolFederationOutpost),
@@ -138,7 +137,7 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemNitrogenTanks: {
 		E(domain.EcoAgrarianBreadbasket), P(domain.PolColonialCharter), E(domain.EcoResourceRich),
 		S(domain.SocScientificExpedition), P(domain.PolTradeFedNeutrality),
-		ComboPE(domain.PolTerraforming, domain.EcoIndustrialBoom), // Implicit terraforming logic
+		ComboPE(domain.PolAnarchicFreehold, domain.EcoIndustrialBoom),
 	},
 	domain.ItemRawBiomass: {
 		E(domain.EcoAgrarianBreadbasket), S(domain.SocPreIndustrial), P(domain.PolFeudalDominion),
@@ -173,7 +172,6 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 
 	// =============================================================================
 	// SECTOR 2: INDUSTRIAL
-	// Produced by: Manufacturing Hubs, Boom Economies, Corporate States
 	// =============================================================================
 	domain.ItemSteelBeams: {
 		E(domain.EcoManufacturingHub), E(domain.EcoIndustrialBoom), P(domain.PolCorporateSovereign),
@@ -273,7 +271,7 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemWasteRecyclers: {
 		E(domain.EcoDepletedWorld), P(domain.PolFailedState), S(domain.SocSlum),
 		E(domain.EcoScavengerEconomy), P(domain.PolIsolationist),
-		ComboPE(domain.PolAIGovernance, domain.EcoPostScarcity), // Efficient recycling
+		ComboPE(domain.PolAIGovernance, domain.EcoPostScarcity),
 	},
 	domain.ItemDrillingHeads: {
 		E(domain.EcoManufacturingHub), P(domain.PolColonialCharter), E(domain.EcoGoldRush),
@@ -303,7 +301,6 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 
 	// =============================================================================
 	// SECTOR 3: CONSUMABLES
-	// Produced by: Agrarian Worlds, Hydroponics, Relief Camps
 	// =============================================================================
 	domain.ItemNutrientPaste: {
 		E(domain.EcoFamine), S(domain.SocRefugeeCrisis), P(domain.PolMartialLaw),
@@ -373,7 +370,7 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemSeeds: {
 		E(domain.EcoAgrarianBreadbasket), S(domain.SocScientificExpedition), P(domain.PolColonialCharter),
 		P(domain.PolFeudalDominion), E(domain.EcoResourceRich),
-		ComboPE(domain.PolTerraforming, domain.EcoPostScarcity),
+		ComboPE(domain.PolImperialCore, domain.EcoPostScarcity),
 	},
 	domain.ItemAntibiotics: {
 		S(domain.SocPlague), P(domain.PolImperialCore), S(domain.SocScientificExpedition),
@@ -393,7 +390,7 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemVitamins: {
 		E(domain.EcoAgrarianBreadbasket), S(domain.SocCosmopolitan), P(domain.PolCorporateSovereign),
 		E(domain.EcoPostScarcity), S(domain.SocScientificExpedition),
-		ComboES(domain.EcoFamine, domain.SocRefugeeCrisis), // Aid shipments
+		ComboES(domain.EcoFamine, domain.SocRefugeeCrisis),
 	},
 	domain.ItemStimPacks: {
 		P(domain.PolMartialLaw), E(domain.EcoWarEconomy), S(domain.SocGladiatorial),
@@ -433,7 +430,6 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 
 	// =============================================================================
 	// SECTOR 4: TECHNOLOGY
-	// Produced by: Tech Worlds, AI Governance, Research Stations
 	// =============================================================================
 	domain.ItemQuantumProcessors: {
 		P(domain.PolAIGovernance), E(domain.EcoPostScarcity), S(domain.SocAcademy),
@@ -528,11 +524,11 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemTerraformingMicrobes: {
 		S(domain.SocScientificExpedition), P(domain.PolCorporateSovereign), E(domain.EcoPostScarcity),
 		P(domain.PolColonialCharter), E(domain.EcoAgrarianBreadbasket),
-		ComboPE(domain.PolTerraforming, domain.EcoTechBottleneck),
+		ComboPE(domain.PolTradeFedNeutrality, domain.EcoTechBottleneck),
 	},
 	domain.ItemAtmosphericProcessors: {
 		E(domain.EcoManufacturingHub), P(domain.PolColonialCharter), S(domain.SocScientificExpedition),
-		E(domain.EcoIndustrialBoom), P(domain.PolTerraforming),
+		E(domain.EcoIndustrialBoom), P(domain.PolIsolationist),
 		ComboES(domain.EcoDepletedWorld, domain.SocFrontierSpirit),
 	},
 	domain.ItemEncryptionBreakers: {
@@ -563,7 +559,6 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 
 	// =============================================================================
 	// SECTOR 5: LUXURY
-	// Produced by: Artist Enclaves, Imperial Cores, Rich Worlds
 	// =============================================================================
 	domain.ItemSilk: {
 		E(domain.EcoAgrarianBreadbasket), P(domain.PolFeudalDominion), S(domain.SocArtistEnclave),
@@ -693,7 +688,6 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 
 	// =============================================================================
 	// SECTOR 6: CONTRABAND
-	// Produced by: Pirate Havens, Black Markets, Anarchic Zones
 	// =============================================================================
 	domain.ItemNarcotics: {
 		P(domain.PolPirateHaven), E(domain.EcoBlackMarketHub), S(domain.SocSlum),
@@ -723,7 +717,7 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemSlaveCollars: {
 		P(domain.PolPirateHaven), P(domain.PolFeudalDominion), P(domain.PolFailedState),
 		E(domain.EcoBlackMarketHub), P(domain.PolSyndicateTerritory),
-		ComboPE(domain.PolPenalColony, domain.EcoScavengerEconomy),
+		ComboPE(domain.PolFederationOutpost, domain.EcoScavengerEconomy),
 	},
 	domain.ItemCounterfeitCurrency: {
 		P(domain.PolSyndicateTerritory), E(domain.EcoBlackMarketHub), P(domain.PolAnarchicFreehold),
@@ -738,12 +732,12 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemAILimitersDisabled: {
 		P(domain.PolAIGovernance), S(domain.SocCyberneticAscension), E(domain.EcoBlackMarketHub),
 		P(domain.PolPirateHaven), S(domain.SocScientificExpedition),
-		ComboES(domain.EcoTechBottleneck, domain.SocWorkerRebellion),
+		ComboES(domain.EcoTechBottleneck, domain.SocCultActivity),
 	},
 	domain.ItemHarvestedOrgans: {
 		P(domain.PolFailedState), S(domain.SocRefugeeCrisis), E(domain.EcoBlackMarketHub),
 		P(domain.PolPirateHaven), S(domain.SocPlague),
-		ComboPE(domain.PolPenalColony, domain.EcoDepression),
+		ComboPE(domain.PolFederationOutpost, domain.EcoDepression),
 	},
 	domain.ItemEndangeredSpecies: {
 		P(domain.PolPirateHaven), E(domain.EcoBlackMarketHub), P(domain.PolColonialCharter),
@@ -773,7 +767,7 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemTortureDevices: {
 		P(domain.PolMartialLaw), P(domain.PolPirateHaven), P(domain.PolFeudalDominion),
 		E(domain.EcoBlackMarketHub), P(domain.PolFailedState),
-		ComboPE(domain.PolPenalColony, domain.EcoDepression),
+		ComboPE(domain.PolFederationOutpost, domain.EcoDepression),
 	},
 	domain.ItemRelicFragments: {
 		P(domain.PolExileColony), E(domain.EcoScavengerEconomy), S(domain.SocCultActivity),
@@ -783,11 +777,11 @@ var GlobalProductionMap = map[domain.ItemName][]ProductionRule{
 	domain.ItemMindWipeDrugs: {
 		P(domain.PolSyndicateTerritory), S(domain.SocCyberneticAscension), E(domain.EcoBlackMarketHub),
 		P(domain.PolMartialLaw), P(domain.PolCorporateSovereign),
-		ComboPE(domain.PolPenalColony, domain.EcoTechBottleneck),
+		ComboPE(domain.PolFederationOutpost, domain.EcoTechBottleneck),
 	},
 	domain.ItemFugitiveBiometrics: {
 		P(domain.PolSyndicateTerritory), E(domain.EcoBlackMarketHub), S(domain.SocSlum),
-		P(domain.PolPirateHaven), P(domain.PolPenalColony),
+		P(domain.PolPirateHaven), P(domain.PolFederationOutpost),
 		ComboES(domain.EcoDepression, domain.SocCosmopolitan),
 	},
 	domain.ItemRedMercury: {

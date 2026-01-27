@@ -5,12 +5,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"galaxies/internal/core/entity"
-	
+	"galaxies/internal/core/domain"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
 
 // PostgresRepository holds the connection pool.
 type PostgresRepository struct {
@@ -192,4 +194,87 @@ func (r *PostgresRepository) GetSystem(ctx context.Context, id uuid.UUID) (*enti
 	}
 
 	return &sys, nil
+}
+
+// internal/adapter/repository/postgres.go (Add this method)
+
+// SaveUniverse performs a high-performance batch insert of systems.
+func (r *PostgresRepository) SaveUniverse(ctx context.Context, systems []*entity.System) error {
+    batch := &pgx.Batch{}
+
+    for _, s := range systems {
+        statsJson, _ := json.Marshal(s.Stats)
+
+        // We cast the enums to int for storage (or string if you have a String() method)
+        // Adjust these casts based on your domain package definitions.
+        politicalVal := fmt.Sprintf("%d", s.Political)
+        economicVal := fmt.Sprintf("%d", s.Economic)
+        socialVal := fmt.Sprintf("%d", s.Social)
+
+        query := `
+            INSERT INTO systems (id, name, x, y, political, economic, social, stats)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (id) DO NOTHING; -- Skip if already seeded
+        `
+        batch.Queue(query, s.ID, s.Name, s.X, s.Y, politicalVal, economicVal, socialVal, statsJson)
+    }
+
+    // Execute the batch
+    br := r.db.SendBatch(ctx, batch)
+    defer br.Close()
+
+    // Check for errors in the batch execution
+    for i := 0; i < len(systems); i++ {
+        _, err := br.Exec()
+        if err != nil {
+            return fmt.Errorf("failed to insert system %d: %w", i, err)
+        }
+    }
+
+    return nil
+}
+// LoadUniverse fetches ALL systems from the database to populate the game engine memory.
+func (r *PostgresRepository) LoadUniverse(ctx context.Context) (map[uuid.UUID]*entity.System, error) {
+    query := `
+        SELECT id, name, x, y, political, economic, social, stats 
+        FROM systems
+    `
+    rows, err := r.db.Query(ctx, query)
+    if err != nil {
+        return nil, fmt.Errorf("failed to query universe: %w", err)
+    }
+    defer rows.Close()
+
+    universe := make(map[uuid.UUID]*entity.System)
+
+    for rows.Next() {
+        var s entity.System
+        var statsRaw []byte
+        
+        // Scan into STRINGS first because DB column is TEXT
+        var polStr, ecoStr, socStr string
+
+        if err := rows.Scan(&s.ID, &s.Name, &s.X, &s.Y, &polStr, &ecoStr, &socStr, &statsRaw); err != nil {
+            return nil, fmt.Errorf("failed to scan system: %w", err)
+        }
+
+        // Convert String -> Int
+        pVal, _ := strconv.Atoi(polStr)
+        eVal, _ := strconv.Atoi(ecoStr)
+        sVal, _ := strconv.Atoi(socStr)
+
+        // Cast Int -> Enum
+        s.Political = domain.PoliticalStatus(pVal)
+        s.Economic = domain.EconomicStatus(eVal)
+        s.Social = domain.SocialStatus(sVal)
+
+        // Hydrate Stats from JSONB
+        if err := json.Unmarshal(statsRaw, &s.Stats); err != nil {
+            return nil, fmt.Errorf("failed to unmarshal stats for system %s: %w", s.ID, err)
+        }
+
+        universe[s.ID] = &s
+    }
+
+    return universe, nil
 }

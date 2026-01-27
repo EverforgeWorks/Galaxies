@@ -4,24 +4,19 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"galaxies/internal/adapter/repository"
-	"galaxies/internal/core/entity"
 	"galaxies/internal/core/service"
-    // "galaxies/internal/core/gen" // Uncomment when Universe Generator is ready
 )
 
 func main() {
 	// 1. DATABASE CONNECTION
-	// We use pgxpool for a thread-safe connection pool.
-	// Update user/pass to match your DBeaver settings.
 	dbUrl := "postgres://galaxies_admin:orbit_locks@localhost:5432/galaxies"
 	pool, err := pgxpool.New(context.Background(), dbUrl)
 	if err != nil {
@@ -34,10 +29,12 @@ func main() {
 	playerRepo := repository.NewPostgresRepository(pool)
 
 	// 3. ENGINE INITIALIZATION
-	// For MVP: We need an empty universe map or load it from DB.
-	// Ideally, you run your Universe Generator here to populate the map.
-	universeMap := make(map[uuid.UUID]*entity.System) 
-    // universeMap := gen.GenerateUniverse(100) // Future step: Generate 100 systems
+	fmt.Println("🌌 Loading Universe from Database...")
+	universeMap, err := playerRepo.LoadUniverse(context.Background())
+	if err != nil {
+		log.Fatalf("❌ Failed to load universe: %v", err)
+	}
+	fmt.Printf("✨ Loaded %d star systems into memory.\n", len(universeMap))
 	
 	engine := service.NewGameEngine(playerRepo, universeMap)
 	fmt.Println("✅ Game Engine Started")
@@ -45,11 +42,9 @@ func main() {
 	// 4. HTTP SERVER (GIN)
 	r := gin.Default()
 
-	// --- CORS CONFIGURATION (Critical for VueJS) ---
-	// Vue runs on port 5173 (Vite) or 8080. Go runs on 8080/3000.
-	// Browsers block this by default. We must explicitly allow it.
+	// --- CORS CONFIGURATION ---
 	config := cors.DefaultConfig()
-	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:8080"} // Add your Vue URL here
+	config.AllowOrigins = []string{"http://localhost:5173", "http://localhost:8080"} 
 	config.AllowMethods = []string{"GET", "POST", "PUT", "OPTIONS"}
 	config.AllowHeaders = []string{"Origin", "Content-Type", "Authorization"}
 	r.Use(cors.New(config))
@@ -71,13 +66,12 @@ func main() {
 				c.JSON(400, gin.H{"error": "invalid json"})
 				return
 			}
-            
-            // Convert String to UUID
-            pid, err := uuid.Parse(req.PlayerID)
-            if err != nil {
-                c.JSON(400, gin.H{"error": "invalid uuid format"})
-                return
-            }
+			
+			pid, err := uuid.Parse(req.PlayerID)
+			if err != nil {
+				c.JSON(400, gin.H{"error": "invalid uuid format"})
+				return
+			}
 
 			player, err := engine.Login(c.Request.Context(), pid)
 			if err != nil {
@@ -97,9 +91,9 @@ func main() {
 				c.JSON(400, gin.H{"error": "invalid json"})
 				return
 			}
-            
-            pID, _ := uuid.Parse(req.PlayerID)
-            tID, _ := uuid.Parse(req.TargetID)
+			
+			pID, _ := uuid.Parse(req.PlayerID)
+			tID, _ := uuid.Parse(req.TargetID)
 
 			if err := engine.Warp(c.Request.Context(), pID, tID); err != nil {
 				c.JSON(400, gin.H{"error": err.Error()})

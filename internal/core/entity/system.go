@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"math"
 	"github.com/google/uuid"
 	"galaxies/internal/core/domain"
 )
@@ -14,9 +15,9 @@ type System struct {
 	Y int
 
 	// The "DNA" of the system - determining how stats are generated
-	Political enums.PoliticalStatus // e.g., "Anarchy", "Democracy"
-	Economic  enums.EconomicStatus  // e.g., "Industrial", "Agricultural"
-	Social    enums.SocialStatus    // e.g., "Feudal", "Utopian"
+	Political domain.PoliticalStatus // e.g., "Anarchy", "Democracy"
+	Economic  domain.EconomicStatus  // e.g., "Industrial", "Agricultural"
+	Social    domain.SocialStatus    // e.g., "Feudal", "Utopian"
 
 	// The computed gameplay modifiers
 	Stats SystemStats `json:"stats"`
@@ -125,4 +126,9 @@ func NewDefaultSystemStats() SystemStats {
 		HasPrison:         false,
 		HasAndroidFoundry: false,
 	}
+}
+
+// CalculateDistance returns the Euclidean distance between two systems.
+func CalculateDistance(a, b *System) float64 {
+	return math.Sqrt(math.Pow(float64(b.X-a.X), 2) + math.Pow(float64(b.Y-a.Y), 2))
 }
