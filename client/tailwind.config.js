@@ -9,6 +9,6 @@ export default {
   },
   plugins: [require("daisyui")],
   daisyui: {
-    themes: ["black", "cyberpunk"], // "black" is the default dark theme, "cyberpunk" for accents
+    themes: ["dark"], // Force dark mode for that space aesthetic
   },
 }
