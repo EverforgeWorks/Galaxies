@@ -48,9 +48,8 @@ func RegisterRoutes(r *gin.Engine, h *Hub, sm *service.SessionManager, universe 
 			return
 		}
 
-		// Retrieve player from session manager to perform initial sync
+		// Retrieve player for initial sync
 		player, _ := sm.GetActivePlayer(id)
-		
 		serveWs(h, c, id, player, universe)
 	})
 }
@@ -70,7 +69,7 @@ func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID, player *entity.Player
 
 	client.hub.register <- client
 
-	// INITIAL SYNC: Send data immediately if available
+	// INITIAL SYNC
 	if player != nil {
 		syncPlayer(client, player)
 		if star, ok := universe[player.CurrentStarID]; ok {
@@ -84,20 +83,14 @@ func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID, player *entity.Player
 
 func syncPlayer(c *Client, p *entity.Player) {
 	payload, _ := json.Marshal(p)
-	msg := entity.GameMessage{
-		Type:    entity.TypePlayerUpdate,
-		Payload: payload,
-	}
+	msg := entity.GameMessage{Type: entity.TypePlayerUpdate, Payload: payload}
 	data, _ := json.Marshal(msg)
 	c.send <- data
 }
 
 func syncStar(c *Client, s entity.Star) {
 	payload, _ := json.Marshal(s)
-	msg := entity.GameMessage{
-		Type:    entity.TypeStarUpdate,
-		Payload: payload,
-	}
+	msg := entity.GameMessage{Type: entity.TypeStarUpdate, Payload: payload}
 	data, _ := json.Marshal(msg)
 	c.send <- data
 }
@@ -108,7 +101,6 @@ func (c *Client) writePump() {
 		ticker.Stop()
 		c.conn.Close()
 	}()
-
 	for {
 		select {
 		case message, ok := <-c.send:
@@ -117,27 +109,18 @@ func (c *Client) writePump() {
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
-
 			w, err := c.conn.NextWriter(websocket.TextMessage)
-			if err != nil {
-				return
-			}
+			if err != nil { return }
 			w.Write(message)
-
 			n := len(c.send)
 			for i := 0; i < n; i++ {
 				w.Write([]byte{'\n'})
 				w.Write(<-c.send)
 			}
-
-			if err := w.Close(); err != nil {
-				return
-			}
+			if err := w.Close(); err != nil { return }
 		case <-ticker.C:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
-			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return
-			}
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil { return }
 		}
 	}
 }
@@ -147,25 +130,17 @@ func (c *Client) readPump() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
-
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
 	c.conn.SetPongHandler(func(string) error {
 		c.conn.SetReadDeadline(time.Now().Add(pongWait))
 		return nil
 	})
-
 	for {
 		_, message, err := c.conn.ReadMessage()
-		if err != nil {
-			break
-		}
-
+		if err != nil { break }
 		var envelope entity.GameMessage
-		if err := json.Unmarshal(message, &envelope); err != nil {
-			continue
-		}
-
+		if err := json.Unmarshal(message, &envelope); err != nil { continue }
 		c.hub.HandleIncoming(c.playerID, envelope)
 	}
 }
