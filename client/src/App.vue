@@ -1,9 +1,11 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
+
+// Import the components you created
 import TerminalLayout from './components/TerminalLayout.vue'
-import LoginView from './views/LoginView.vue'
-import RegistrationView from './views/RegistrationView.vue'
-import DashboardView from './views/DashboardView.vue'
+import LoginView from './components/LoginView.vue'
+import DashboardView from './components/DashboardView.vue'
+// import RegistrationView from './components/RegistrationView.vue' // Enable when ready
 
 // -- STATE --
 const token = ref(localStorage.getItem('token') || '')
@@ -13,15 +15,14 @@ const player = ref(null)
 const currentStar = ref(null)
 let socket = null
 
-// -- COMPUTED --
-// Logic: If no token -> Login. If token but no player data yet -> Loading (or Reg). If player data -> Dashboard.
+// -- VIEW LOGIC --
 const currentView = computed(() => {
   if (!token.value) return 'LOGIN'
-  if (token.value && !player.value) return 'LOADING' // Or Registration if we add that flag
+  if (token.value && !player.value) return 'LOADING' 
   return 'DASHBOARD'
 })
 
-// -- LOGIC --
+// -- NETWORK LOGIC --
 const addLog = (msg) => logs.value.unshift(`${new Date().toLocaleTimeString()}: ${msg}`)
 
 const connectWS = () => {
@@ -35,7 +36,7 @@ const connectWS = () => {
   
   socket.onopen = () => {
     status.value = 'CONNECTED'
-    addLog('Uplink established.')
+    addLog('System Link Established.')
   }
   
   socket.onmessage = (e) => {
@@ -43,7 +44,7 @@ const connectWS = () => {
       const msg = JSON.parse(e.data)
       handleMessage(msg)
     } catch (err) {
-      console.error(err)
+      console.error("Protocol Error:", err)
     }
   }
   
@@ -71,15 +72,8 @@ const login = (provider) => {
   window.location.href = `/auth/${provider}`
 }
 
-// TODO: Wire this up to a backend message type "UPDATE_NAME" later
-const handleRegistration = (name) => {
-  addLog(`Requesting callsign: ${name}...`)
-  // socket.send(JSON.stringify({ type: 'UPDATE_NAME', payload: { name } }))
-}
-
 // -- LIFECYCLE --
 onMounted(() => {
-  // Check for OAuth callback token
   const params = new URLSearchParams(window.location.search)
   const urlToken = params.get('token')
   
@@ -95,10 +89,14 @@ onMounted(() => {
 
 <template>
   <TerminalLayout :status="status">
-    <LoginView v-if="currentView === 'LOGIN'" @login="login" />
     
-    <div v-else-if="currentView === 'LOADING'" class="text-center mt-20 animate-pulse">
-      ESTABLISHING NEURAL LINK...
+    <LoginView 
+      v-if="currentView === 'LOGIN'" 
+      @login="login" 
+    />
+    
+    <div v-else-if="currentView === 'LOADING'" class="text-center mt-20 animate-pulse text-terminal-green">
+      > ESTABLISHING NEURAL LINK...
     </div>
     
     <DashboardView 
@@ -107,5 +105,6 @@ onMounted(() => {
       :star="currentStar" 
       :logs="logs" 
     />
+
   </TerminalLayout>
 </template>
