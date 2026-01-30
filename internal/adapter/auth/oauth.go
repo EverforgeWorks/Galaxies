@@ -1,6 +1,7 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 	"os"
 
@@ -26,12 +27,18 @@ func SetupOAuth() {
 	goth.UseProviders(providers...)
 }
 
-// Updated to accept Repository and HomeStarID for user creation
+// RegisterRoutes sets up the OAuth endpoints
 func RegisterRoutes(r *gin.Engine, repo *repository.PlayerRepository, homeStarID uuid.UUID) {
 	authGroup := r.Group("/auth")
 	
-	// Inject dependencies via closure
+	// 1. Login Initiation Route
 	authGroup.GET("/:provider", func(c *gin.Context) {
+		// FIX: Goth expects "?provider=x", but we use "/:provider".
+		// We manually inject the provider into the query params so Goth can find it.
+		q := c.Request.URL.Query()
+		q.Add("provider", c.Param("provider"))
+		c.Request.URL.RawQuery = q.Encode()
+
 		// Try to complete auth immediately (if already signed in) or start flow
 		if _, err := gothic.CompleteUserAuth(c.Writer, c.Request); err == nil {
 			// Already authenticated
@@ -40,17 +47,26 @@ func RegisterRoutes(r *gin.Engine, repo *repository.PlayerRepository, homeStarID
 		}
 	})
 
+	// 2. Callback Route
 	authGroup.GET("/:provider/callback", func(c *gin.Context) {
+		// FIX: Inject provider here too for the callback verification
+		q := c.Request.URL.Query()
+		q.Add("provider", c.Param("provider"))
+		c.Request.URL.RawQuery = q.Encode()
+
 		user, err := gothic.CompleteUserAuth(c.Writer, c.Request)
 		if err != nil {
-			c.String(http.StatusBadRequest, "Authentication failed")
+			c.String(http.StatusBadRequest, "Authentication failed: "+err.Error())
 			return
 		}
 
 		// Upsert Player in DB
-		player, err := repo.GetOrCreatePlayer(c, user.UserID, user.NickName, homeStarID)
+		// Use a background context for DB ops, or the request context if appropriate
+		// c.Request.Context() is usually best, but ensure it doesn't cancel too early
+		ctx := context.Background() 
+		player, err := repo.GetOrCreatePlayer(ctx, user.UserID, user.NickName, homeStarID)
 		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to create player session")
+			c.String(http.StatusInternalServerError, "Failed to create player session: "+err.Error())
 			return
 		}
 
@@ -62,7 +78,6 @@ func RegisterRoutes(r *gin.Engine, repo *repository.PlayerRepository, homeStarID
 		}
 
 		// Redirect to frontend with token
-		// In production, consider a secure cookie or a temporary code exchange
 		frontendURL := os.Getenv("FRONTEND_URL")
 		if frontendURL == "" {
 			frontendURL = "http://localhost:5173"
