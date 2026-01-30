@@ -15,13 +15,3 @@ type Player struct {
 	// Renamed from CurrentSystemID to match Repository SQL usage
 	CurrentStarID uuid.UUID `json:"current_star_id"` 
 }
-
-type GameMessage struct {
-	Type    string `json:"type"`
-	Payload []byte `json:"payload"`
-}
-
-const (
-	TypePlayerUpdate = "PLAYER_UPDATE"
-	TypeStarUpdate   = "STAR_UPDATE"
-)
