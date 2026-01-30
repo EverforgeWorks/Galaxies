@@ -45,3 +45,20 @@ func serveWs(hub *Hub, c *gin.Context) {
 	go client.writePump()
 	go client.readPump()
 }
+
+func (c *Client) writePump() {
+	ticker := time.NewTicker(pingPeriod)
+	defer ticker.Stop()
+
+	for {
+		select {
+		case message := <-c.send:
+			c.conn.WriteMessage(websocket.TextMessage, message)
+		case <-ticker.C:
+			// If this fails, the connection is dead, and we trigger Disconnect
+			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
+				return 
+			}
+		}
+	}
+}
