@@ -6,7 +6,6 @@ import (
 
 	"galaxies/internal/core/entity"
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -18,9 +17,11 @@ func NewPlayerRepository(pool *pgxpool.Pool) *PlayerRepository {
 	return &PlayerRepository{pool: pool}
 }
 
+// GetOrCreatePlayer handles the OAuth login flow (lookup by External Provider ID)
 func (r *PlayerRepository) GetOrCreatePlayer(ctx context.Context, extID string, name string, homeStarID uuid.UUID) (*entity.Player, error) {
 	var p entity.Player
 	
+	// Upsert: Insert if new, update LastLogin if exists
 	query := `
 		INSERT INTO players (id, external_id, name, current_star_id)
 		VALUES ($1, $2, $3, $4)
@@ -37,6 +38,23 @@ func (r *PlayerRepository) GetOrCreatePlayer(ctx context.Context, extID string, 
 		return nil, fmt.Errorf("player upsert failed: %w", err)
 	}
 	
+	return &p, nil
+}
+
+// GetPlayerByID handles the WebSocket session hydration (lookup by Internal UUID)
+func (r *PlayerRepository) GetPlayerByID(ctx context.Context, id uuid.UUID) (*entity.Player, error) {
+	var p entity.Player
+	query := `
+		SELECT id, external_id, name, credits, is_admin, last_login, current_star_id 
+		FROM players 
+		WHERE id = $1
+	`
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&p.ID, &p.ExternalID, &p.Name, &p.Credits, &p.IsAdmin, &p.LastLogin, &p.CurrentStarID,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find player %s: %w", id, err)
+	}
 	return &p, nil
 }
 
