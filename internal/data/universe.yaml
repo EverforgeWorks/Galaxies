@@ -1,21 +1,41 @@
 stars:
-  - x: 0
-    y: 0
-  - x: 4
-    y: 1
-  - x: -8
-    y: -3
-  - x: 12
-    y: -5
-  - x: -2
-    y: 10
-  - x: 7
-    y: -8
-  - x: 0
-    y: -4
-  - x: 6
-    y: 5
-  - x: -9
-    y: -14
-  - x: 16
-    y: 9
+    - id: c6796120-0ed9-3769-b279-d4f4e2e8e2c8
+      name: Sirius Cygni
+      x: 0
+      "y": 0
+    - id: e035a14b-df31-39f4-9d92-4aa1bc6e505d
+      name: FO-6828-S
+      x: 4
+      "y": 1
+    - id: 797e5dfb-98ac-3e6c-bc83-8e6a1eec34f3
+      name: Sol Cluster
+      x: -8
+      "y": -3
+    - id: 14f69229-dc70-3330-a9e9-37a506210a5d
+      name: CU-3839-B
+      x: 12
+      "y": -5
+    - id: 2d64a73f-fd64-3076-9b6a-22dc16efb19b
+      name: Altair Major
+      x: -2
+      "y": 10
+    - id: ceae13da-1a4f-355f-92be-e264a2502342
+      name: Omicron IV
+      x: 7
+      "y": -8
+    - id: a64585e1-e2b2-3aee-ab99-aa0ab47b40d3
+      name: Epsilon VII
+      x: 0
+      "y": -4
+    - id: 3e45045c-e3dc-3862-b4d0-cfd81bc4cf08
+      name: LA-4988-B
+      x: 6
+      "y": 5
+    - id: ebf52849-ecf4-3a3a-ab69-3891c330fb9d
+      name: Betel I
+      x: -9
+      "y": -14
+    - id: f3214e0b-73ba-3721-bbee-e5f5cfac3b92
+      name: WO-3966-I
+      x: 16
+      "y": 9
