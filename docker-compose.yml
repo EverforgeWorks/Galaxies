@@ -9,7 +9,9 @@ services:
       POSTGRES_DB: galaxies
     volumes:
       - ./postgres-data:/var/lib/postgresql/data
-      - ./sql/schema.sql:/docker-entrypoint-initdb.d/init.sql
+      # Note: Migrations are now handled by the Go backend, 
+      # but we keep this as a secondary safety measure.
+      - ./internal/adapter/repository/migrations/000001_init_schema.up.sql:/docker-entrypoint-initdb.d/init.sql
     ports:
       - "5432:5432"
     healthcheck:
@@ -25,6 +27,8 @@ services:
     restart: always
     environment:
       NC_PUBLIC_URL: "https://db.playburnrate.com"
+      # NocoDB needs connection details to the Postgres instance
+      NC_DB: "pg://db:5432?u=galaxies_admin&p=${DB_PASSWORD}&d=galaxies"
     depends_on:
       db:
         condition: service_healthy
@@ -36,8 +40,10 @@ services:
       dockerfile: server.Dockerfile
     restart: always
     environment:
-      DB_URL: "postgres://galaxies_admin:${DB_PASSWORD}@db:5432/galaxies"
+      # We use DATABASE_URL to match your new main.go expectations
+      DATABASE_URL: "postgres://galaxies_admin:${DB_PASSWORD}@db:5432/galaxies?sslmode=disable"
       GIN_MODE: "release"
+      JWT_SECRET: ${JWT_SECRET}
       GITHUB_KEY: ${GITHUB_KEY}
       GITHUB_SECRET: ${GITHUB_SECRET}
       DISCORD_KEY: ${DISCORD_KEY}
