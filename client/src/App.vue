@@ -1,11 +1,8 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
-
-// Import the components you created
 import TerminalLayout from './components/TerminalLayout.vue'
 import LoginView from './components/LoginView.vue'
 import DashboardView from './components/DashboardView.vue'
-// import RegistrationView from './components/RegistrationView.vue' // Enable when ready
 
 // -- STATE --
 const token = ref(localStorage.getItem('token') || '')
@@ -22,7 +19,18 @@ const currentView = computed(() => {
   return 'DASHBOARD'
 })
 
-// -- NETWORK LOGIC --
+// -- ACTIONS --
+const logout = () => {
+  localStorage.removeItem('token')
+  token.value = ''
+  player.value = null
+  if (socket) {
+    socket.close()
+    socket = null
+  }
+  window.location.href = '/'
+}
+
 const addLog = (msg) => logs.value.unshift(`${new Date().toLocaleTimeString()}: ${msg}`)
 
 const connectWS = () => {
@@ -30,7 +38,9 @@ const connectWS = () => {
   
   status.value = 'CONNECTING...'
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
-  const wsUrl = `${protocol}://${window.location.host}/ws?token=${token.value}`
+  // Vite proxy targets port 8080, but in prod/docker we hit nginx at port 80
+  const host = window.location.host 
+  const wsUrl = `${protocol}://${host}/ws?token=${token.value}`
   
   socket = new WebSocket(wsUrl)
   
@@ -48,9 +58,11 @@ const connectWS = () => {
     }
   }
   
-  socket.onclose = () => {
+  socket.onclose = (e) => {
     status.value = 'DISCONNECTED'
     socket = null
+    // If we get a 401 (Close Code 1006 usually in browser), it means bad token
+    addLog('Connection Lost. Token may be expired.')
   }
 }
 
@@ -95,8 +107,13 @@ onMounted(() => {
       @login="login" 
     />
     
-    <div v-else-if="currentView === 'LOADING'" class="text-center mt-20 animate-pulse text-terminal-green">
-      > ESTABLISHING NEURAL LINK...
+    <div v-else-if="currentView === 'LOADING'" class="flex flex-col items-center mt-20 space-y-4">
+      <div class="animate-pulse text-terminal-green text-xl">
+        > ESTABLISHING NEURAL LINK...
+      </div>
+      <button @click="logout" class="text-xs text-red-500 hover:text-red-400 underline cursor-pointer">
+        [ ABORT / RESET UPLINK ]
+      </button>
     </div>
     
     <DashboardView 
