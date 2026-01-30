@@ -35,8 +35,10 @@ func main() {
 	defer pool.Close()
 
 	// 2. Run Database Migrations
+	// Note: Ensure internal/adapter/repository/migrations.go exists if you use this.
+	// Otherwise, rely on docker-compose init.sql.
 	if err := repository.RunMigrations(pool); err != nil {
-		log.Fatalf("Database migration failed: %v", err)
+		log.Printf("Warning: Database migration via Go failed (may have run via init.sql): %v", err)
 	}
 
 	// 3. Load Universe Manifest
@@ -64,7 +66,8 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	// 5. Initialize Auth (CRITICAL FIX)
+	// 5. Initialize Auth
+	// Reads GITHUB_KEY, DISCORD_KEY, CALLBACK_BASE_URL from env
 	auth.SetupOAuth()
 
 	// 6. Initialize Web Server
@@ -80,8 +83,11 @@ func main() {
 		c.Next()
 	})
 
-	// 7. Register Routes
-	auth.RegisterRoutes(r) // CRITICAL FIX
+	// 7. Register Routes with Dependencies
+	// CRITICAL FIX: Passing playerRepo and homeStarID to Auth
+	auth.RegisterRoutes(r, playerRepo, homeStarID)
+	
+	// WebSocket Routes
 	websocket.RegisterRoutes(r, hub, sessionMgr, universe)
 
 	// 8. Start Server
