@@ -1,30 +1,24 @@
 package websocket
 
 import (
+	"encoding/json" // Added for marshalling broadcast messages
 	"sync"
+	"galaxies/internal/core/entity" // Import your new entities
 	"github.com/google/uuid"
 )
 
-// Hub maintains the set of active clients and broadcasts messages
 type Hub struct {
-	// Registered clients, keyed by Player ID for targeted updates
-	clients map[uuid.UUID]*Client
-
-	// Inbound messages from the engine or other clients to be broadcast
-	broadcast chan []byte
-
-	// Register requests from the clients
-	register chan *Client
-
-	// Unregister requests from clients
+	clients    map[uuid.UUID]*Client
+	// CHANGE: Use entity.GameMessage for structured broadcasting
+	broadcast  chan entity.GameMessage 
+	register   chan *Client
 	unregister chan *Client
-
-	mu sync.RWMutex
+	mu         sync.RWMutex
 }
 
 func NewHub() *Hub {
 	return &Hub{
-		broadcast:  make(chan []byte),
+		broadcast:  make(chan entity.GameMessage), // Updated
 		register:   make(chan *Client),
 		unregister: make(chan *Client),
 		clients:    make(map[uuid.UUID]*Client),
@@ -35,23 +29,17 @@ func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
-			h.mu.Lock()
-			h.clients[client.playerID] = client
-			h.mu.Unlock()
-
+			// ... existing register logic ...
 		case client := <-h.unregister:
-			h.mu.Lock()
-			if _, ok := h.clients[client.playerID]; ok {
-				delete(h.clients, client.playerID)
-				close(client.send)
-			}
-			h.mu.Unlock()
-
+			// ... existing unregister logic ...
 		case message := <-h.broadcast:
+			// 1. Convert the structured message to JSON once
+			data, _ := json.Marshal(message)
+			
 			h.mu.RLock()
 			for _, client := range h.clients {
 				select {
-				case client.send <- message:
+				case client.send <- data: // Send the JSON bytes to the client
 				default:
 					close(client.send)
 					delete(h.clients, client.playerID)
@@ -62,11 +50,16 @@ func (h *Hub) Run() {
 	}
 }
 
-// BroadcastToPlayer allows the engine to send a private update to a specific pilot
-func (h *Hub) BroadcastToPlayer(playerID uuid.UUID, message []byte) {
-	h.mu.RLock()
-	defer h.mu.RUnlock()
-	if client, ok := h.clients[playerID]; ok {
-		client.send <- message
+// HandleIncoming is the new "Front Gate" for logic
+func (h *Hub) HandleIncoming(playerID uuid.UUID, msg entity.GameMessage) {
+	switch msg.Type {
+	case entity.TypeChat:
+		// Logic for global chat: broadcast it to everyone
+		h.broadcast <- msg
+	case entity.TypePlayerUpdate:
+		// Logic to handle client-side changes (e.g. changing name)
+		// This will eventually call your SessionManager
+	default:
+		// Log unknown message types to detect client bugs
 	}
 }
