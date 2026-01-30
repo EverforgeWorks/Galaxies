@@ -5,10 +5,18 @@ export default {
     "./src/**/*.{vue,js,ts,jsx,tsx}",
   ],
   theme: {
-    extend: {},
+    extend: {
+      fontFamily: {
+        mono: ['"VT323"', 'monospace'], // Overrides default mono stack
+      },
+      colors: {
+        'terminal-green': '#33ff00',
+        'terminal-black': '#0a0a0a',
+      }
+    },
   },
   plugins: [require("daisyui")],
   daisyui: {
-    themes: ["dark"], // Force dark mode for that space aesthetic
+    themes: ["black"], // Forces dark mode base
   },
 }
