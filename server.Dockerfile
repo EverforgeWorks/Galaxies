@@ -1,26 +1,38 @@
+# Step 1: Build Stage
 FROM golang:1.25-alpine AS builder
 
+# Install git for fetching dependencies
 RUN apk add --no-cache git
 
 WORKDIR /app
+
+# Cache dependencies first
 COPY go.mod go.sum ./
 RUN go mod download
+
+# Copy the full source
 COPY . .
 
 # Build the Main Server
 RUN go build -o server ./cmd/server/main.go
 
-# Uncomment the following line and in COPY if you need to reseed the universe with fresh systems.
+# Build the Seeder (Ensure cmd/seeder/main.go exists, or comment this out)
 RUN go build -o seeder ./cmd/seeder/main.go
 
-# Step 2: Runtime container
+# Step 2: Runtime Stage
 FROM alpine:latest
+RUN apk add --no-cache ca-certificates
+
 WORKDIR /root/
 
-# Copy the Server
+# Copy Binaries
 COPY --from=builder /app/server .
 COPY --from=builder /app/seeder .
 
+# CRITICAL: Copy the static data and migrations
+# Your main.go expects these files to exist at runtime
+COPY --from=builder /app/internal/data/universe.yaml ./internal/data/universe.yaml
+COPY --from=builder /app/internal/adapter/repository/migrations ./internal/adapter/repository/migrations
 
 EXPOSE 8080
 CMD ["./server"]
