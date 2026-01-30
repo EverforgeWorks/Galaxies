@@ -2,16 +2,18 @@ package entity
 
 import "encoding/json"
 
-type MessageType string
-
+// Use untyped string constants.
+// This prevents strict type mismatch errors (e.g., comparing "string" vs "MessageType")
+// and ensures TypePlayerUpdate is actually defined.
 const (
-	TypeStarUpdate MessageType = "STAR_UPDATE"
-	TypeChat       MessageType = "CHAT_MESSAGE"
-	TypeError      MessageType = "ERROR"
+	TypeStarUpdate   = "STAR_UPDATE"
+	TypePlayerUpdate = "PLAYER_UPDATE" // This was missing in your version
+	TypeChat         = "CHAT_MESSAGE"
+	TypeError        = "ERROR"
 )
 
 type GameMessage struct {
-	Type    MessageType     `json:"type"`
+	Type    string          `json:"type"` // Simplified from MessageType to string
 	Payload json.RawMessage `json:"payload"`
 }
 
