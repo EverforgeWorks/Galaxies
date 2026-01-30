@@ -33,7 +33,6 @@ type Client struct {
 	playerID uuid.UUID
 }
 
-// Updated signature to match main.go
 func RegisterRoutes(r *gin.Engine, h *Hub, sm *service.SessionManager, universe map[uuid.UUID]entity.Star) {
 	r.GET("/ws", auth.Middleware(), func(c *gin.Context) {
 		playerID, exists := c.Get("playerID")
@@ -48,8 +47,13 @@ func RegisterRoutes(r *gin.Engine, h *Hub, sm *service.SessionManager, universe 
 			return
 		}
 
-		// Retrieve player for initial sync
-		player, _ := sm.GetActivePlayer(id)
+		// CRITICAL FIX: EnsurePlayerActive hydrates from DB if not in memory
+		player, err := sm.EnsurePlayerActive(c, id)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "failed to load player session"})
+			return
+		}
+
 		serveWs(h, c, id, player, universe)
 	})
 }
@@ -69,12 +73,10 @@ func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID, player *entity.Player
 
 	client.hub.register <- client
 
-	// INITIAL SYNC
-	if player != nil {
-		syncPlayer(client, player)
-		if star, ok := universe[player.CurrentStarID]; ok {
-			syncStar(client, star)
-		}
+	// Send Initial State
+	syncPlayer(client, player)
+	if star, ok := universe[player.CurrentStarID]; ok {
+		syncStar(client, star)
 	}
 
 	go client.writePump()
