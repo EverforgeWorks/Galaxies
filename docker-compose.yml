@@ -27,8 +27,6 @@ services:
     restart: always
     environment:
       NC_PUBLIC_URL: "https://db.playburnrate.com"
-      # NocoDB needs connection details to the Postgres instance
-      NC_DB: "pg://db:5432?u=galaxies_admin&p=${DB_PASSWORD}&d=galaxies"
     depends_on:
       db:
         condition: service_healthy
