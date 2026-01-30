@@ -1,2 +1,4 @@
+nocodb-data/
+node_modules/
 postgres-data/
 .env
