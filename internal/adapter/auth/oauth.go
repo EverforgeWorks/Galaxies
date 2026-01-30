@@ -78,7 +78,7 @@ func RegisterRoutes(r *gin.Engine, repo *repository.PlayerRepository, homeStarID
 		}
 
 		// Redirect to frontend with token
-		frontendURL := os.Getenv("FRONTEND_URL")
+		frontendURL := os.Getenv("CALLBACK_BASE_URL")
 		if frontendURL == "" {
 			frontendURL = "https://playburnrate.com"
 		}
