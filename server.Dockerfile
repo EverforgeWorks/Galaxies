@@ -22,11 +22,11 @@ RUN apk add --no-cache ca-certificates
 
 WORKDIR /root/
 
-# Copy Binaries
+# Copy Server Binary
 COPY --from=builder /app/server .
 
 # CRITICAL: Copy the static data and migrations
-# Your main.go expects these files to exist at runtime
+# Preserves the "internal/..." path structure so main.go can find them
 COPY --from=builder /app/internal/data/universe.yaml ./internal/data/universe.yaml
 COPY --from=builder /app/internal/adapter/repository/migrations ./internal/adapter/repository/migrations
 
