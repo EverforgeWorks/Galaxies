@@ -1,6 +1,7 @@
 package data
 
 import (
+	"fmt"
 	"os"
 
 	"galaxies/internal/core/entity"
@@ -13,7 +14,7 @@ type UniverseManifest struct {
 	Stars []entity.Star `yaml:"stars"`
 }
 
-// LoadUniverse reads coordinates from YAML and generates names/IDs for each star
+// LoadUniverse reads coordinates and generates DETERMINISTIC names/IDs
 func LoadUniverse(path string) (map[uuid.UUID]entity.Star, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -27,11 +28,23 @@ func LoadUniverse(path string) (map[uuid.UUID]entity.Star, error) {
 
 	universeMap := make(map[uuid.UUID]entity.Star)
 	for i := range manifest.Stars {
-		// Generate unique identity for this star
-		manifest.Stars[i].ID = uuid.New()
-		manifest.Stars[i].Name = gen.GenerateStarName()
+		star := &manifest.Stars[i]
+
+		// 1. Create a Seed String from Coordinates
+		// This string is the "DNA" of the star. (e.g., "star:0:0")
+		seedString := fmt.Sprintf("star:%d:%d", star.X, star.Y)
+
+		// 2. Generate Deterministic UUID
+		// We use uuid.NewMD5 to generate a UUID based on the seed string.
+		// This ensures ID is always the same for these coordinates.
+		star.ID = uuid.NewMD5(uuid.NameSpaceOID, []byte(seedString))
+
+		// 3. Generate Deterministic Name
+		// We initialize your new generator with the same seed string.
+		rng := gen.NewSeededGenerator(seedString)
+		star.Name = gen.GenerateStarName(rng)
 		
-		universeMap[manifest.Stars[i].ID] = manifest.Stars[i]
+		universeMap[star.ID] = *star
 	}
 
 	return universeMap, nil
