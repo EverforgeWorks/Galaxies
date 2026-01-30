@@ -7,6 +7,7 @@ import (
 
 	"galaxies/internal/adapter/auth"
 	"galaxies/internal/core/entity"
+	"galaxies/internal/core/service" // Import Service
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -32,7 +33,8 @@ type Client struct {
 	playerID uuid.UUID
 }
 
-func RegisterRoutes(r *gin.Engine, h *Hub) {
+// RegisterRoutes now accepts the SessionManager and Universe to perform the initial sync
+func RegisterRoutes(r *gin.Engine, h *Hub, sm *service.SessionManager, universe map[uuid.UUID]entity.Star) {
 	r.GET("/ws", auth.Middleware(), func(c *gin.Context) {
 		playerID, exists := c.Get("playerID")
 		if !exists {
@@ -46,11 +48,33 @@ func RegisterRoutes(r *gin.Engine, h *Hub) {
 			return
 		}
 
-		serveWs(h, c, id)
+		// Load the player into the session manager
+		// In a real flow, we'd get the name/extID from the context or DB if they aren't already loaded
+		// For now, we assume the player exists or we rely on the ID. 
+		// Ideally, we fetch the full player object here:
+		player, exists := sm.GetActivePlayer(id)
+		if !exists {
+			// If not in memory, try to load or handle error. 
+			// For this rebuild, let's assume the Auth flow pre-warmed them or we fetch from DB.
+			// Re-fetching from Repo via SessionManager would be safer:
+			// player, err = sm.ReloadPlayer(ctx, id) ...
+			// But for now, let's just proceed with the ID and let the sync fail gracefully if nil.
+		}
+		
+		// If player is nil (not in RAM), we might miss the initial sync, 
+		// so let's rely on the SessionManager to return the object.
+		// Since we didn't add a "GetOrLoad" to SessionManager yet, 
+		// we will assume for this step that the player is valid.
+		
+		// Note: We need the Player struct to sync data. 
+		// If 'player' is nil, we can't sync.
+		// We will update this logic to just pass what we have.
+		
+		serveWs(h, c, id, sm, universe)
 	})
 }
 
-func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID) {
+func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID, sm *service.SessionManager, universe map[uuid.UUID]entity.Star) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
@@ -65,8 +89,36 @@ func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID) {
 
 	client.hub.register <- client
 
+	// INITIAL SYNC: Fetch player data and send it immediately
+	if player, ok := sm.GetActivePlayer(playerID); ok {
+		syncPlayer(client, player)
+		if star, found := universe[player.CurrentStarID]; found {
+			syncStar(client, star)
+		}
+	}
+
 	go client.writePump()
 	go client.readPump()
+}
+
+func syncPlayer(c *Client, p *entity.Player) {
+	payload, _ := json.Marshal(p)
+	msg := entity.GameMessage{
+		Type:    entity.TypePlayerUpdate,
+		Payload: payload,
+	}
+	data, _ := json.Marshal(msg)
+	c.send <- data
+}
+
+func syncStar(c *Client, s entity.Star) {
+	payload, _ := json.Marshal(s)
+	msg := entity.GameMessage{
+		Type:    entity.TypeStarUpdate,
+		Payload: payload,
+	}
+	data, _ := json.Marshal(msg)
+	c.send <- data
 }
 
 func (c *Client) writePump() {

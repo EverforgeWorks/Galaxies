@@ -7,6 +7,7 @@ import (
 	"os"
 	"time"
 
+	"galaxies/internal/adapter/auth" // Import Auth
 	"galaxies/internal/adapter/repository"
 	"galaxies/internal/adapter/websocket"
 	"galaxies/internal/core/service"
@@ -63,7 +64,10 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	// 5. Initialize Web Server
+	// 5. Initialize Auth Providers
+	auth.SetupOAuth() // CRITICAL: Loads GITHUB_KEY, DISCORD_KEY, etc.
+
+	// 6. Initialize Web Server
 	r := gin.Default()
 
 	// Add CORS for development
@@ -78,10 +82,11 @@ func main() {
 		c.Next()
 	})
 
-	// 6. Register WebSocket Routes
+	// 7. Register Routes
+	auth.RegisterRoutes(r) // CRITICAL: Enables /auth/github and /auth/discord
 	websocket.RegisterRoutes(r, hub, sessionMgr, universe)
 
-	// 7. Start Server
+	// 8. Start Server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
