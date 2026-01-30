@@ -27,6 +27,8 @@ services:
     restart: always
     environment:
       NC_PUBLIC_URL: "https://db.playburnrate.com"
+    volumes:
+      - ./nocodb-data:/usr/app/data
     depends_on:
       db:
         condition: service_healthy
