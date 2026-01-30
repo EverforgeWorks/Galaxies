@@ -5,38 +5,61 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-// RunMigrations executes the initial schema setup
+// RunMigrations executes all .up.sql files in the migrations directory
 func RunMigrations(pool *pgxpool.Pool) error {
-	// The Dockerfile copies migrations to ./internal/adapter/repository/migrations
-	// We are running from /app/ (where the binary is in Docker), so the path relative to workdir:
-	path := "internal/adapter/repository/migrations/000001_init_schema.up.sql"
+	// The directory where migrations are stored
+	dir := "internal/adapter/repository/migrations"
 
-	content, err := os.ReadFile(path)
+	// 1. Read the directory
+	entries, err := os.ReadDir(dir)
 	if err != nil {
-		// Fallback: try finding it relative to the repository root if running locally (go run ./cmd/server/main.go)
-		// Assuming we are in project root
-		fallbackPath := filepath.Join(".", path)
-		content, err = os.ReadFile(fallbackPath)
+		// Fallback: try finding it relative to project root (for local go run)
+		dir = filepath.Join(".", dir)
+		entries, err = os.ReadDir(dir)
 		if err != nil {
-			return fmt.Errorf("failed to read migration file at %s: %w", path, err)
+			return fmt.Errorf("failed to read migrations directory at %s: %w", dir, err)
 		}
 	}
 
-	sql := string(content)
-	
-	// Execute the SQL commands
-	_, err = pool.Exec(context.Background(), sql)
-	if err != nil {
-		// Ignore "already exists" errors for this simple setup
-		if strings.Contains(err.Error(), "already exists") {
-			return nil
+	// 2. Filter and Sort files
+	// We want to run them in order: 000001, 000002, etc.
+	var files []string
+	for _, entry := range entries {
+		if !entry.IsDir() && strings.HasSuffix(entry.Name(), ".up.sql") {
+			files = append(files, entry.Name())
 		}
-		return fmt.Errorf("failed to execute migration: %w", err)
+	}
+	sort.Strings(files)
+
+	if len(files) == 0 {
+		return fmt.Errorf("no migration files found in %s", dir)
+	}
+
+	// 3. Execute each migration sequentially
+	for _, file := range files {
+		path := filepath.Join(dir, file)
+		content, err := os.ReadFile(path)
+		if err != nil {
+			return fmt.Errorf("failed to read migration %s: %w", file, err)
+		}
+
+		sql := string(content)
+
+		// Execute the SQL
+		// Note: We rely on "CREATE TABLE IF NOT EXISTS" in the SQL files 
+		// to prevent errors if running multiple times.
+		_, err = pool.Exec(context.Background(), sql)
+		if err != nil {
+			return fmt.Errorf("failed to execute migration %s: %w", file, err)
+		}
+		
+		fmt.Printf("Migration executed successfully: %s\n", file)
 	}
 
 	return nil
