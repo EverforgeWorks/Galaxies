@@ -3,8 +3,6 @@ package repository
 import (
 	"context"
 	"fmt"
-	"log"
-
 	"galaxies/internal/core/entity"
 	"github.com/google/uuid"
 	"github.com/jackc/pgx/v5"
