@@ -35,19 +35,27 @@ func main() {
 	defer pool.Close()
 
 	// 2. Run Database Migrations
-	// Note: Ensure internal/adapter/repository/migrations.go exists if you use this.
-	// Otherwise, rely on docker-compose init.sql.
 	if err := repository.RunMigrations(pool); err != nil {
 		log.Printf("Warning: Database migration via Go failed (may have run via init.sql): %v", err)
 	}
 
-	// 3. Load Universe Manifest
+	// 3. Load Universe Manifest (RAM)
 	universe, err := data.LoadUniverse("internal/data/universe.yaml")
 	if err != nil {
 		log.Fatalf("Failed to load universe manifest: %v", err)
 	}
 
-	// Find the Home Star (coordinates 0,0)
+	// 4. Sync Universe to Database (NEW)
+	// This ensures that whatever is in the YAML (and RAM) is also queryable in SQL.
+	// It uses "ON CONFLICT UPDATE" so it handles restarts gracefully.
+	starRepo := repository.NewStarRepository(pool)
+	log.Println("Syncing universe to database...")
+	if err := starRepo.SyncUniverse(ctx, universe); err != nil {
+		log.Fatalf("Failed to sync universe to DB: %v", err)
+	}
+	log.Printf("Universe synced: %d stars active.", len(universe))
+
+	// 5. Find the Home Star (coordinates 0,0)
 	var homeStarID uuid.UUID
 	for id, star := range universe {
 		if star.X == 0 && star.Y == 0 {
@@ -60,17 +68,16 @@ func main() {
 		log.Fatalf("Critical Error: No home star (0,0) found in universe.yaml")
 	}
 
-	// 4. Initialize Core Services
+	// 6. Initialize Core Services
 	playerRepo := repository.NewPlayerRepository(pool)
 	sessionMgr := service.NewSessionManager(playerRepo, homeStarID)
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	// 5. Initialize Auth
-	// Reads GITHUB_KEY, DISCORD_KEY, CALLBACK_BASE_URL from env
+	// 7. Initialize Auth
 	auth.SetupOAuth()
 
-	// 6. Initialize Web Server
+	// 8. Initialize Web Server
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -83,14 +90,11 @@ func main() {
 		c.Next()
 	})
 
-	// 7. Register Routes with Dependencies
-	// CRITICAL FIX: Passing playerRepo and homeStarID to Auth
+	// 9. Register Routes with Dependencies
 	auth.RegisterRoutes(r, playerRepo, homeStarID)
-	
-	// WebSocket Routes
 	websocket.RegisterRoutes(r, hub, sessionMgr, universe)
 
-	// 8. Start Server
+	// 10. Start Server
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
