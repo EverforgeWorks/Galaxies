@@ -15,15 +15,6 @@ type GameMessage struct {
 	Payload json.RawMessage `json:"payload"`
 }
 
-type ChatPayload struct {
-	SenderName string `json:"sender_name"`
-	Content    string `json:"content"`
-}
-
-type ErrorPayload struct {
-	Message string `json:"message"`
-}
-
 // ChatPayload defines the structure for real-time communication
 type ChatPayload struct {
 	SenderName string `json:"sender_name"`
