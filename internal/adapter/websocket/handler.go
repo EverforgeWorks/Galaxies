@@ -62,3 +62,31 @@ func (c *Client) writePump() {
 		}
 	}
 }
+
+func (c *Client) readPump() {
+	defer func() {
+		c.hub.unregister <- c
+		c.conn.Close()
+	}()
+
+	// Set read limits and pong handlers for connection health
+	c.conn.SetReadLimit(512) // Prevent oversized packet attacks
+	
+	for {
+		_, message, err := c.conn.ReadMessage()
+		if err != nil {
+			break
+		}
+
+		// 1. Unmarshal into the strict Envelope defined in entity
+		var envelope entity.GameMessage
+		if err := json.Unmarshal(message, &envelope); err != nil {
+			// In production, log this as a warning: malformed client data
+			continue 
+		}
+
+		// 2. Pass the structured message to the hub for routing
+		// The hub now receives a typed struct, not a raw byte slice
+		c.hub.HandleIncoming(c.playerID, envelope)
+	}
+}
