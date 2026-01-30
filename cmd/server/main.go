@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"galaxies/internal/adapter/auth" // Added Auth Import
+	"galaxies/internal/adapter/auth"
 	"galaxies/internal/adapter/repository"
 	"galaxies/internal/adapter/websocket"
 	"galaxies/internal/core/service"
@@ -64,13 +64,11 @@ func main() {
 	hub := websocket.NewHub()
 	go hub.Run()
 
-	// 5. Initialize Auth (CRITICAL MISSING STEP)
+	// 5. Initialize Auth (CRITICAL FIX)
 	auth.SetupOAuth()
 
 	// 6. Initialize Web Server
 	r := gin.Default()
-	
-	// Add CORS for development
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
@@ -83,7 +81,7 @@ func main() {
 	})
 
 	// 7. Register Routes
-	auth.RegisterRoutes(r) // CRITICAL: Enables /auth/github endpoints
+	auth.RegisterRoutes(r) // CRITICAL FIX
 	websocket.RegisterRoutes(r, hub, sessionMgr, universe)
 
 	// 8. Start Server
@@ -91,7 +89,6 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-
 	log.Printf("Galaxies Server starting on port %s...", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Server failed: %v", err)
