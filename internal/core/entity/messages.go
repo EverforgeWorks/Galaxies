@@ -2,20 +2,26 @@ package entity
 
 import "encoding/json"
 
-// MessageType helps the receiver know what's inside the Payload
 type MessageType string
 
 const (
-	TypePlayerUpdate MessageType = "PLAYER_UPDATE"
-	TypeSystemUpdate MessageType = "SYSTEM_UPDATE"
-	TypeChat         MessageType = "CHAT_MESSAGE"
-	TypeError        MessageType = "ERROR"
+	TypeStarUpdate MessageType = "STAR_UPDATE"
+	TypeChat       MessageType = "CHAT_MESSAGE"
+	TypeError      MessageType = "ERROR"
 )
 
-// GameMessage is the strict "Envelope" for all communication
 type GameMessage struct {
 	Type    MessageType     `json:"type"`
-	Payload json.RawMessage `json:"payload"` // Delayed unmarshalling
+	Payload json.RawMessage `json:"payload"`
+}
+
+type ChatPayload struct {
+	SenderName string `json:"sender_name"`
+	Content    string `json:"content"`
+}
+
+type ErrorPayload struct {
+	Message string `json:"message"`
 }
 
 // ChatPayload defines the structure for real-time communication

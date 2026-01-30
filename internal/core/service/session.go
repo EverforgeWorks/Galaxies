@@ -3,53 +3,58 @@ package service
 import (
 	"context"
 	"sync"
+
+	"galaxies/internal/core/entity"
 	"galaxies/internal/adapter/repository"
 	"github.com/google/uuid"
 )
 
 type SessionManager struct {
-	// activePlayers maps PlayerID to their live, in-memory data
 	activePlayers map[uuid.UUID]*entity.Player
 	repo          *repository.PlayerRepository
+	homeStarID    uuid.UUID
 	mu            sync.RWMutex
 }
 
-func NewSessionManager(repo *repository.PlayerRepository) *SessionManager {
+func NewSessionManager(repo *repository.PlayerRepository, homeStarID uuid.UUID) *SessionManager {
 	return &SessionManager{
 		activePlayers: make(map[uuid.UUID]*entity.Player),
 		repo:          repo,
+		homeStarID:    homeStarID,
 	}
 }
 
-// PlayerConnected loads the player from DB into RAM
-func (s *SessionManager) PlayerConnected(ctx context.Context, id uuid.UUID) (*entity.Player, error) {
+func (s *SessionManager) PlayerConnected(ctx context.Context, extID string, name string) (*entity.Player, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	// If already in memory, return the instance (handles quick tab refreshes)
-	if p, exists := s.activePlayers[id]; exists {
-		return p, nil
-	}
-
-	// Otherwise, fetch from DB
-	p, err := s.repo.GetPlayerByID(ctx, id)
+	// 1. Fetch or Create via Repository
+	p, err := s.repo.GetOrCreatePlayer(ctx, extID, name, s.homeStarID)
 	if err != nil {
 		return nil, err
 	}
 
-	s.activePlayers[id] = p
+	// 2. Track in memory
+	s.activePlayers[p.ID] = p
 	return p, nil
 }
 
-// PlayerDisconnected saves data back to DB and purges RAM
 func (s *SessionManager) PlayerDisconnected(ctx context.Context, id uuid.UUID) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
 	if p, exists := s.activePlayers[id]; exists {
+		// Final save to Postgres
 		err := s.repo.SavePlayer(ctx, p)
 		delete(s.activePlayers, id)
 		return err
 	}
 	return nil
+}
+
+func (s *SessionManager) GetActivePlayer(id uuid.UUID) (*entity.Player, bool) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	p, exists := s.activePlayers[id]
+	return p, exists
 }
