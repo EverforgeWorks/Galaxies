@@ -1,36 +1,61 @@
 package websocket
 
 import (
+	"encoding/json"
 	"net/http"
+	"time"
+
+	"galaxies/internal/adapter/auth"
+	"galaxies/internal/core/entity"
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
 )
 
+const (
+	// Time allowed to write a message to the peer.
+	writeWait = 10 * time.Second
+
+	// Time allowed to read the next pong message from the peer.
+	pongWait = 60 * time.Second
+
+	// Send pings to peer with this period. Must be less than pongWait.
+	pingPeriod = (pongWait * 9) / 10
+
+	// Maximum message size allowed from peer.
+	maxMessageSize = 512
+)
+
 var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
-	CheckOrigin: func(r *http.Request) bool { return true }, // Relax for local dev
+	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
 func RegisterRoutes(r *gin.Engine, h *Hub) {
-    // Apply the middleware only to the websocket route
-    r.GET("/ws", auth.Middleware(), func(c *gin.Context) {
-        // Retrieve the validated ID from context
-        playerID := c.MustGet("playerID").(uuid.UUID)
-        serveWs(h, c, playerID)
-    })
+	// Apply the auth middleware to ensure only valid pilots can connect
+	r.GET("/ws", auth.Middleware(), func(c *gin.Context) {
+		playerID, exists := c.Get("playerID")
+		if !exists {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "unauthorized"})
+			return
+		}
+
+		id, ok := playerID.(uuid.UUID)
+		if !ok {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "invalid player id"})
+			return
+		}
+
+		serveWs(h, c, id)
+	})
 }
 
-func serveWs(hub *Hub, c *gin.Context) {
+func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID) {
 	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
 		return
 	}
-
-	// For now, we'll manually set a PlayerID. 
-	// Later, this will come from the Auth middleware.
-	playerID := uuid.New() 
 
 	client := &Client{
 		hub:      hub,
@@ -48,16 +73,40 @@ func serveWs(hub *Hub, c *gin.Context) {
 
 func (c *Client) writePump() {
 	ticker := time.NewTicker(pingPeriod)
-	defer ticker.Stop()
+	defer func() {
+		ticker.Stop()
+		c.conn.Close()
+	}()
 
 	for {
 		select {
-		case message := <-c.send:
-			c.conn.WriteMessage(websocket.TextMessage, message)
+		case message, ok := <-c.send:
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
+			if !ok {
+				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
+				return
+			}
+
+			w, err := c.conn.NextWriter(websocket.TextMessage)
+			if err != nil {
+				return
+			}
+			w.Write(message)
+
+			// Add queued messages to the current websocket message.
+			n := len(c.send)
+			for i := 0; i < n; i++ {
+				w.Write([]byte{'\n'})
+				w.Write(<-c.send)
+			}
+
+			if err := w.Close(); err != nil {
+				return
+			}
 		case <-ticker.C:
-			// If this fails, the connection is dead, and we trigger Disconnect
+			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if err := c.conn.WriteMessage(websocket.PingMessage, nil); err != nil {
-				return 
+				return
 			}
 		}
 	}
@@ -69,24 +118,24 @@ func (c *Client) readPump() {
 		c.conn.Close()
 	}()
 
-	// Set read limits and pong handlers for connection health
-	c.conn.SetReadLimit(512) // Prevent oversized packet attacks
-	
+	c.conn.SetReadLimit(maxMessageSize)
+	c.conn.SetReadDeadline(time.Now().Add(pongWait))
+	c.conn.SetPongHandler(func(string) error { 
+		c.conn.SetReadDeadline(time.Now().Add(pongWait))
+		return nil 
+	})
+
 	for {
 		_, message, err := c.conn.ReadMessage()
 		if err != nil {
 			break
 		}
 
-		// 1. Unmarshal into the strict Envelope defined in entity
 		var envelope entity.GameMessage
 		if err := json.Unmarshal(message, &envelope); err != nil {
-			// In production, log this as a warning: malformed client data
-			continue 
+			continue
 		}
 
-		// 2. Pass the structured message to the hub for routing
-		// The hub now receives a typed struct, not a raw byte slice
 		c.hub.HandleIncoming(c.playerID, envelope)
 	}
 }
