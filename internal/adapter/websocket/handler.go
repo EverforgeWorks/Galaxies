@@ -13,16 +13,9 @@ import (
 )
 
 const (
-	// Time allowed to write a message to the peer.
-	writeWait = 10 * time.Second
-
-	// Time allowed to read the next pong message from the peer.
-	pongWait = 60 * time.Second
-
-	// Send pings to peer with this period. Must be less than pongWait.
-	pingPeriod = (pongWait * 9) / 10
-
-	// Maximum message size allowed from peer.
+	writeWait      = 10 * time.Second
+	pongWait       = 60 * time.Second
+	pingPeriod     = (pongWait * 9) / 10
 	maxMessageSize = 512
 )
 
@@ -32,8 +25,14 @@ var upgrader = websocket.Upgrader{
 	CheckOrigin:     func(r *http.Request) bool { return true },
 }
 
+type Client struct {
+	hub      *Hub
+	conn     *websocket.Conn
+	send     chan []byte
+	playerID uuid.UUID
+}
+
 func RegisterRoutes(r *gin.Engine, h *Hub) {
-	// Apply the auth middleware to ensure only valid pilots can connect
 	r.GET("/ws", auth.Middleware(), func(c *gin.Context) {
 		playerID, exists := c.Get("playerID")
 		if !exists {
@@ -66,7 +65,6 @@ func serveWs(hub *Hub, c *gin.Context, playerID uuid.UUID) {
 
 	client.hub.register <- client
 
-	// Start the concurrent read/write pumps
 	go client.writePump()
 	go client.readPump()
 }
@@ -93,7 +91,6 @@ func (c *Client) writePump() {
 			}
 			w.Write(message)
 
-			// Add queued messages to the current websocket message.
 			n := len(c.send)
 			for i := 0; i < n; i++ {
 				w.Write([]byte{'\n'})
@@ -120,9 +117,9 @@ func (c *Client) readPump() {
 
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error { 
+	c.conn.SetPongHandler(func(string) error {
 		c.conn.SetReadDeadline(time.Now().Add(pongWait))
-		return nil 
+		return nil
 	})
 
 	for {
