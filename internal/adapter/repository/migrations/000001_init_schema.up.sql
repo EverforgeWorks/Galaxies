@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS players (
     credits INT DEFAULT 1000,              -- Starting wallet
     is_admin BOOLEAN DEFAULT FALSE,        -- Admin flag
     last_login TIMESTAMP DEFAULT NOW(),    -- Login tracking
-    current_system_id UUID                 -- Location (to be linked to universe)
+    current_star_id UUID                 -- Location (to be linked to universe)
 );
 
 -- Create an index for external_id. 
