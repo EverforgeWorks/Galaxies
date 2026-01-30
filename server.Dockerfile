@@ -16,9 +16,6 @@ COPY . .
 # Build the Main Server
 RUN go build -o server ./cmd/server/main.go
 
-# Build the Seeder (Ensure cmd/seeder/main.go exists, or comment this out)
-RUN go build -o seeder ./cmd/seeder/main.go
-
 # Step 2: Runtime Stage
 FROM alpine:latest
 RUN apk add --no-cache ca-certificates
@@ -27,7 +24,6 @@ WORKDIR /root/
 
 # Copy Binaries
 COPY --from=builder /app/server .
-COPY --from=builder /app/seeder .
 
 # CRITICAL: Copy the static data and migrations
 # Your main.go expects these files to exist at runtime
