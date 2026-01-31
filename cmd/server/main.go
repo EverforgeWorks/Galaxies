@@ -45,7 +45,7 @@ func main() {
 		log.Fatalf("Failed to load universe manifest: %v", err)
 	}
 
-	// 4. Sync Universe to Database (NEW)
+	// 4. Sync Universe to Database
 	// This ensures that whatever is in the YAML (and RAM) is also queryable in SQL.
 	// It uses "ON CONFLICT UPDATE" so it handles restarts gracefully.
 	starRepo := repository.NewStarRepository(pool)
@@ -69,8 +69,17 @@ func main() {
 	}
 
 	// 6. Initialize Core Services
+	// -- Repositories --
 	playerRepo := repository.NewPlayerRepository(pool)
-	sessionMgr := service.NewSessionManager(playerRepo, homeStarID)
+	shipRepo := repository.NewShipRepository(pool) // NEW
+
+	// -- Domain Services --
+	shipService := service.NewShipService(shipRepo) // NEW
+
+	// -- Application Services --
+	// Updated to inject shipService so new logins get a ship automatically
+	sessionMgr := service.NewSessionManager(playerRepo, shipService, homeStarID)
+
 	hub := websocket.NewHub()
 	go hub.Run()
 

@@ -2,25 +2,31 @@ package service
 
 import (
 	"context"
+	"log"
 	"sync"
 
-	"galaxies/internal/core/entity"
 	"galaxies/internal/adapter/repository"
+	"galaxies/internal/core/entity"
+
 	"github.com/google/uuid"
 )
 
 type SessionManager struct {
 	activePlayers map[uuid.UUID]*entity.Player
 	repo          *repository.PlayerRepository
-	homeStarID    uuid.UUID
-	mu            sync.RWMutex
+	// ADDED: Dependency for ship management
+	shipService *ShipService
+	homeStarID  uuid.UUID
+	mu          sync.RWMutex
 }
 
-func NewSessionManager(repo *repository.PlayerRepository, homeStarID uuid.UUID) *SessionManager {
+// ADDED: shipService argument
+func NewSessionManager(repo *repository.PlayerRepository, shipService *ShipService, homeStarID uuid.UUID) *SessionManager {
 	return &SessionManager{
 		activePlayers: make(map[uuid.UUID]*entity.Player),
 		repo:          repo,
 		homeStarID:    homeStarID,
+		shipService:   shipService,
 	}
 }
 
@@ -53,6 +59,14 @@ func (s *SessionManager) PlayerConnected(ctx context.Context, extID string, name
 	p, err := s.repo.GetOrCreatePlayer(ctx, extID, name, s.homeStarID)
 	if err != nil {
 		return nil, err
+	}
+
+	// ADDED: The "Game Loop" guarantee
+	// We run this inside the lock to ensure it's done before the player is considered "Active"
+	if _, err := s.shipService.EnsurePlayerHasShip(ctx, p.ID, p.Name); err != nil {
+		// Log error but don't crash login for MVP.
+		// In production, you might want to return the error to stop login.
+		log.Printf("WARNING: Failed to ensure ship for player %s: %v", p.ID, err)
 	}
 
 	// Track in memory
