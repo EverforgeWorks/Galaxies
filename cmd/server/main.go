@@ -19,12 +19,11 @@ import (
 )
 
 func main() {
-	// 1. Database Configuration
+	// 1. Database
 	dbURL := os.Getenv("DATABASE_URL")
 	if dbURL == "" {
 		dbURL = "postgres://postgres:postgres@localhost:5432/galaxies?sslmode=disable"
 	}
-
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
@@ -34,28 +33,20 @@ func main() {
 	}
 	defer pool.Close()
 
-	// 2. Run Database Migrations
 	if err := repository.RunMigrations(pool); err != nil {
-		log.Printf("Warning: Database migration via Go failed (may have run via init.sql): %v", err)
+		log.Printf("Migration warning: %v", err)
 	}
 
-	// 3. Load Universe Manifest (RAM)
+	// 2. Universe
 	universe, err := data.LoadUniverse("internal/data/universe.yaml")
 	if err != nil {
-		log.Fatalf("Failed to load universe manifest: %v", err)
+		log.Fatalf("Failed to load universe: %v", err)
 	}
-
-	// 4. Sync Universe to Database
-	// This ensures that whatever is in the YAML (and RAM) is also queryable in SQL.
-	// It uses "ON CONFLICT UPDATE" so it handles restarts gracefully.
 	starRepo := repository.NewStarRepository(pool)
-	log.Println("Syncing universe to database...")
 	if err := starRepo.SyncUniverse(ctx, universe); err != nil {
-		log.Fatalf("Failed to sync universe to DB: %v", err)
+		log.Fatalf("Failed to sync universe: %v", err)
 	}
-	log.Printf("Universe synced: %d stars active.", len(universe))
 
-	// 5. Find the Home Star (coordinates 0,0)
 	var homeStarID uuid.UUID
 	for id, star := range universe {
 		if star.X == 0 && star.Y == 0 {
@@ -63,30 +54,24 @@ func main() {
 			break
 		}
 	}
-
 	if homeStarID == uuid.Nil {
-		log.Fatalf("Critical Error: No home star (0,0) found in universe.yaml")
+		log.Fatalf("Critical: No home star found")
 	}
 
-	// 6. Initialize Core Services
-	// -- Repositories --
+	// 3. Core Services
 	playerRepo := repository.NewPlayerRepository(pool)
-	shipRepo := repository.NewShipRepository(pool) // NEW
+	shipRepo := repository.NewShipRepository(pool) // Needed for Hub
 
-	// -- Domain Services --
-	shipService := service.NewShipService(shipRepo) // NEW
-
-	// -- Application Services --
-	// Updated to inject shipService so new logins get a ship automatically
+	shipService := service.NewShipService(shipRepo)
 	sessionMgr := service.NewSessionManager(playerRepo, shipService, homeStarID)
 
-	hub := websocket.NewHub()
+	// FIX: Inject shipRepo into NewHub
+	hub := websocket.NewHub(shipRepo)
 	go hub.Run()
 
-	// 7. Initialize Auth
 	auth.SetupOAuth()
 
-	// 8. Initialize Web Server
+	// 4. Web Server
 	r := gin.Default()
 	r.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
@@ -99,16 +84,16 @@ func main() {
 		c.Next()
 	})
 
-	// 9. Register Routes with Dependencies
 	auth.RegisterRoutes(r, playerRepo, homeStarID)
-	websocket.RegisterRoutes(r, hub, sessionMgr, universe)
 
-	// 10. Start Server
+	// FIX: Pass shipRepo to RegisterRoutes
+	websocket.RegisterRoutes(r, hub, sessionMgr, universe, shipRepo)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
 	}
-	log.Printf("Galaxies Server starting on port %s...", port)
+	log.Printf("Starting server on port %s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatalf("Server failed: %v", err)
 	}

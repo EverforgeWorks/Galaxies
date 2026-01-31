@@ -10,10 +10,11 @@ import TerminalLayout from './components/TerminalLayout.vue'
 import LoginView from './components/LoginView.vue'
 import DashboardView from './components/DashboardView.vue'
 import RegistrationView from './components/RegistrationView.vue'
+import CommissionView from './components/CommissionView.vue' // NEW IMPORT
 
 // -- GLOBAL STATE --
 const token = ref(localStorage.getItem('token') || '')
-const status = ref('DISCONNECTED') // WebSocket status: CONNECTING, CONNECTED, DISCONNECTED
+const status = ref('DISCONNECTED') // WebSocket status
 const logs = ref([])               // System log history
 const player = ref(null)           // Current player entity
 const currentStar = ref(null)      // Current star location entity
@@ -21,7 +22,6 @@ const isRegistering = ref(false)   // Flag to interrupt flow for new pilot regis
 let socket = null                  // WebSocket instance
 
 // -- VIEW ROUTING LOGIC --
-// Determines which main component to display based on auth and data state.
 const currentView = computed(() => {
   // 1. No token? User must log in via OAuth.
   if (!token.value) return 'LOGIN'
@@ -36,17 +36,19 @@ const currentView = computed(() => {
   return 'DASHBOARD'
 })
 
+// -- NEW: Check if ship needs naming --
+// This runs only when we are in the 'DASHBOARD' view
+const needsCommission = computed(() => {
+  return player.value?.ship?.name === "Uncommissioned Scout"
+})
+
 // -- ACTIONS --
 
 /**
- * handleRegistration
- * Called when the user submits their callsign in RegistrationView.
- * Updates the local player state and clears the registration flag to reveal the dashboard.
- * @param {string} callsign - The chosen user name
+ * handleRegistration (Pilot Name)
+ * Updates the local player state and clears the registration flag.
  */
 const handleRegistration = (callsign) => {
-    // In a future version, this would send an 'UPDATE_PROFILE' message to the backend.
-    // For now, we optimistically update the local state.
     if (player.value) {
         player.value.name = callsign
     }
@@ -55,10 +57,18 @@ const handleRegistration = (callsign) => {
 }
 
 /**
- * logout
- * Clears authentication tokens, closes connections, and resets state.
- * Acts as an "Emergency Reset" if the client gets into a bad state.
+ * handleCommission (Ship Name)
+ * NEW: Sends the rename command to the server.
  */
+const handleCommission = (name) => {
+    if (!socket) return
+    socket.send(JSON.stringify({
+        type: "COMMISSION_SHIP",
+        payload: name
+    }))
+    addLog(`Transmitting vessel registration: ${name}...`)
+}
+
 const logout = () => {
   localStorage.removeItem('token')
   token.value = ''
@@ -69,38 +79,22 @@ const logout = () => {
     socket.close()
     socket = null
   }
-  
-  // Hard reload to clear any memory artifacts
   window.location.href = '/'
 }
 
-/**
- * login
- * Redirects the user to the backend OAuth endpoint.
- * @param {string} provider - 'github' or 'discord'
- */
 const login = (provider) => {
   window.location.href = `/auth/${provider}`
 }
 
-/**
- * addLog
- * Appends a message to the system log with a timestamp.
- */
 const addLog = (msg) => {
     logs.value.unshift(`${new Date().toLocaleTimeString()}: ${msg}`)
 }
 
-/**
- * connectWS
- * Establishes the WebSocket connection using the JWT token.
- */
 const connectWS = () => {
   if (!token.value || socket) return
   
   status.value = 'CONNECTING...'
   
-  // Determine protocol (wss for https, ws for http)
   const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
   const host = window.location.host 
   const wsUrl = `${protocol}://${host}/ws?token=${token.value}`
@@ -124,7 +118,6 @@ const connectWS = () => {
   socket.onclose = (e) => {
     status.value = 'DISCONNECTED'
     socket = null
-    // Code 1006 usually indicates abnormal closure (e.g., auth failure)
     if (e.code === 1006) {
         addLog('Connection Lost. Token may be expired.')
     } else {
@@ -140,20 +133,37 @@ const connectWS = () => {
 const handleMessage = (msg) => {
   switch (msg.type) {
     case 'PLAYER_UPDATE':
-      // LOGIC: Check if this is a "new" user who needs to register.
-      // We check if 'last_login' is very recent (less than 60 seconds ago).
-      // Note: A more robust method would be a specific "is_new" flag from the backend.
+      // PRESERVED LOGIC: 60s threshold for new users
       const lastLoginTime = new Date(msg.payload.last_login).getTime()
       const now = new Date().getTime()
       const isNewUser = (now - lastLoginTime) < 60000 // 60s threshold
       
-      // If new and we haven't loaded player data yet, trigger registration flow
       if (isNewUser && !player.value) {
          isRegistering.value = true
       }
       
       player.value = msg.payload
       break
+
+
+      // NEW: Handle the universe dump
+    case 'UNIVERSE_STATE':
+      universe.value = msg.payload
+      // Optional: Log it (can be verbose)
+      // addLog(`Nav System: ${msg.payload.length} sectors mapped.`)
+      break
+    
+    // -- NEW HANDLERS --
+    case 'SHIP_UPDATED':
+      if (player.value) {
+          player.value.ship = msg.payload
+          addLog(`Vessel Commissioned: ${msg.payload.name} ready for launch.`)
+      }
+      break
+
+    case 'ERROR':
+        addLog(`[ERROR] ${msg.payload}`)
+        break
       
     case 'STAR_UPDATE':
       currentStar.value = msg.payload
@@ -170,18 +180,15 @@ const handleMessage = (msg) => {
 
 // -- LIFECYCLE --
 onMounted(() => {
-  // Check for JWT token in URL query params (returned from OAuth callback)
   const params = new URLSearchParams(window.location.search)
   const urlToken = params.get('token')
   
   if (urlToken) {
     token.value = urlToken
     localStorage.setItem('token', urlToken)
-    // Remove token from URL for cleaner UI
     window.history.replaceState({}, document.title, "/")
   }
 
-  // If we have a token (from URL or LocalStorage), connect immediately
   if (token.value) {
       connectWS()
   }
@@ -214,12 +221,20 @@ onMounted(() => {
       </button>
     </div>
     
-    <DashboardView 
-      v-else 
-      :player="player" 
-      :star="currentStar" 
-      :logs="logs" 
-    />
+    <div v-else class="h-full relative">
+        
+        <CommissionView 
+            v-if="needsCommission" 
+            @commission="handleCommission" 
+        />
+        
+        <DashboardView 
+            :player="player" 
+            :star="currentStar" 
+            :logs="logs" 
+            :universe="universe"
+        />
+    </div>
 
   </TerminalLayout>
 </template>

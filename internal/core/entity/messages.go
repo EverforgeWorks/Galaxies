@@ -6,10 +6,11 @@ import "encoding/json"
 // This prevents strict type mismatch errors (e.g., comparing "string" vs "MessageType")
 // and ensures TypePlayerUpdate is actually defined.
 const (
-	TypeStarUpdate   = "STAR_UPDATE"
-	TypePlayerUpdate = "PLAYER_UPDATE" // This was missing in your version
-	TypeChat         = "CHAT_MESSAGE"
-	TypeError        = "ERROR"
+	TypeStarUpdate    = "STAR_UPDATE"
+	TypePlayerUpdate  = "PLAYER_UPDATE" // This was missing in your version
+	TypeChat          = "CHAT_MESSAGE"
+	TypeError         = "ERROR"
+	TypeUniverseState = "UNIVERSE_STATE"
 )
 
 type GameMessage struct {
